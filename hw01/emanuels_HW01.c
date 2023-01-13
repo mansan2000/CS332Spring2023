@@ -1,9 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
-int main()
-{
-	
+
 /*
 Method that takes an integer n and prints out different strings if n is divisible by certain numbers and otherwise it prints the cube of n
 Parameters: int n
@@ -75,29 +73,78 @@ int reverseNumber(int n3){
 	return result;
 }
 
-    // Take user input and then call funtion using the input
-    printf("=========Intro To CS332532=========\n");
-    int n;
-    printf("Enter an integer for n: ");
-    scanf("%d", &n);  
-    introToCS332532(n);
+
+int smallerThanIndex(){
+    // int numbers[arraySize];
+    int counter = 0;
+    int numbers[] = {10,20,1,2,30};
+    int arraySize = sizeof(numbers)/sizeof(*(numbers));
+
+    for (int i = 0; i < arraySize; i++){
+        if (*(numbers+i) < i){
+            counter++;
+            // printf("%d",numbers[i]);
+        }
+    }
+    // printf("%d",counter);
+    return counter;
+}
+
+int arrayDetails(){
+    int numbers[] = {-8, -23, 18, 103, 0, 1, -4, 631, 3, -41, 5};
+    int arraySize = sizeof(numbers)/sizeof(*(numbers));
+    printf("%d", arraySize);
+
+        for (int i = 0; i < arraySize; i++){
+        if (*(numbers+i) < i){
+            
+        }
+    }
+
+    int result[] = {arraySize};
+
+    return 0;
+
+}
+
+
+int main()
+{
+	
+
+
+    // // Take user input and then call funtion using the input
+    // printf("=========Intro To CS332532=========\n");
+    // int n;
+    // printf("Enter an integer for n: ");
+    // scanf("%d", &n);  
+    // introToCS332532(n);
 
 	
 	
-    // Take user input and then call funtion using the input
-    printf("========= UABNumber =========\n");
-    int n2;
-    printf("Enter an integer for n2: ");
-    scanf("%d", &n2);  
-	UABNumber(n2);
+    // // Take user input and then call funtion using the input
+    // printf("========= UABNumber =========\n");
+    // int n2;
+    // printf("Enter an integer for n2: ");
+    // scanf("%d", &n2);  
+	// UABNumber(n2);
 
 
 
-    // Take user input and then call funtion using the input
-    printf("========= reverseNumber =========\n");
-    int n3;
-    printf("Enter an integer for n3: ");
-    scanf("%d",&n3);  
-	printf("%d",reverseNumber(n3));
+    // // Take user input and then call funtion using the input
+    // printf("========= reverseNumber =========\n");
+    // int n3;
+    // printf("Enter an integer for n3: ");
+    // scanf("%d",&n3);  
+	// printf("%d",reverseNumber(n3));
+
+
+    // // Take user input and then call funtion using the input
+    // printf("========= smallerThanIndex =========\n");
+    // // int n4;
+    // // printf("Enter an integer for n4: ");
+    // // scanf("%d",&n4);  
+	// printf("%d",smallerThanIndex());
+    arrayDetails();
 }
 
