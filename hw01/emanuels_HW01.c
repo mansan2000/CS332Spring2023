@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<malloc.h>
 
 /*
 Method that takes an integer n and prints out different strings if n is divisible by certain numbers and otherwise it prints the cube of n
@@ -90,20 +91,50 @@ int smallerThanIndex(){
     return counter;
 }
 
-int arrayDetails(){
+float *arrayDetails(){
     int numbers[] = {-8, -23, 18, 103, 0, 1, -4, 631, 3, -41, 5};
     int arraySize = sizeof(numbers)/sizeof(*(numbers));
-    printf("%d", arraySize);
+    printf("arraySize %d\n", arraySize);
 
-        for (int i = 0; i < arraySize; i++){
-        if (*(numbers+i) < i){
-            
-        }
-    }
+	int minimumValue = *(numbers)+1;
+	int indexMinimumValue = -1;
+	int maximumValue = *(numbers)-1;
+	int indexMaximumValue = -1;
+	double totalValueOfElements = 0;
+	for (int i = 0; i < arraySize; i++){
+		totalValueOfElements += *(numbers+i); 
 
-    int result[] = {arraySize};
+//		printf("numbers[i] %d\n", *(numbers+i));
+//		printf("maximumValue %d\n", maximumValue);
+		if (*(numbers+i) > maximumValue){
+			maximumValue = *(numbers+i); 
+			indexMaximumValue = i;
+		}
+		if (*(numbers+i) < minimumValue){
+			minimumValue = *(numbers+i); 
+			indexMinimumValue = i;
+		}
+	}
+    printf("minimumValue %d\n", minimumValue);
+    printf("indexMinimumValue %d\n", indexMinimumValue);
+    printf("mean %0.2f\n", totalValueOfElements/arraySize);
+    printf("maximumValue %d\n", maximumValue);
+    printf("indexMaximumValue %d\n", indexMaximumValue);
 
-    return 0;
+	
+
+	float *array;
+	array = malloc(6 * sizeof(float));
+	*(array) = arraySize;
+	*(array+1) = minimumValue;
+	*(array+2) = indexMinimumValue;
+	*(array+3) = totalValueOfElements/arraySize;
+	*(array+4) = maximumValue;
+	*(array+5) = indexMaximumValue;
+//    printf("testtest %f\n", *(array+1));
+
+
+    return array;
 
 }
 
@@ -145,6 +176,20 @@ int main()
     // // printf("Enter an integer for n4: ");
     // // scanf("%d",&n4);  
 	// printf("%d",smallerThanIndex());
-    arrayDetails();
+//    printf("%0.2f", *(arrayDetails()+1));
+	float *ptr = arrayDetails();
+	printf("[");
+	for(int i=0; i < 6; i++){
+		if(i!=5){
+			printf("%0.2f,", *(ptr+i));
+		} else {
+			printf("%0.2f", *(ptr+i));
+		}
+	}
+	printf("]");
+//    printf("testtest %f\n", *(arrayDetails()+1));
+// 	for(int i=0;ptr[i]!='';i++){
+//		printf("%d ", ptr[i]);
+//	}
 }
 
