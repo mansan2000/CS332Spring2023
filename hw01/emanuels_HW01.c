@@ -3,11 +3,6 @@
 #include<string.h>
 #include<malloc.h>
 
-/*
-Method that takes an integer n and prints out different strings if n is divisible by certain numbers and otherwise it prints the cube of n
-Parameters: int n
-Return: void
-*/
 void introToCS332532(int n){
 
     int boolean = 0;
@@ -56,9 +51,6 @@ int UABNumber(int n2){
 	} else{
 		boolean = 0;
 	}
-
-
-	
 	return boolean;
 
 }
@@ -76,27 +68,20 @@ int reverseNumber(int n3){
 
 
 int smallerThanIndex(int numbers[], int arraySize){
-    // int numbers[arraySize];
     int counter = 0;
-//    int arraySize = sizeof(numbers)/sizeof(*(numbers));
 
     for (int i = 0; i < arraySize; i++){
         if (*(numbers+i) < i){
             counter++;
-            // printf("%d",numbers[i]);
         }
     }
-    // printf("%d",counter);
     return counter;
 }
 
 float *arrayDetails(int numbers1[], int sizeOfArray){
-//    int numbers[] = {-8, -23, 18, 103, 0, 1, -4, 631, 3, -41, 5};
-//    int arraySize = sizeof(numbers)/sizeof(*(numbers));
 
 	int *numbers = numbers1;
 	int arraySize = sizeOfArray;
-//    printf("arraySize %d\n", arraySize);
 
 	int minimumValue = *(numbers)+1;
 	int indexMinimumValue = -1;
@@ -106,8 +91,6 @@ float *arrayDetails(int numbers1[], int sizeOfArray){
 	for (int i = 0; i < arraySize; i++){
 		totalValueOfElements += *(numbers+i); 
 
-//		printf("numbers[i] %d\n", *(numbers+i));
-//		printf("maximumValue %d\n", maximumValue);
 		if (*(numbers+i) > maximumValue){
 			maximumValue = *(numbers+i); 
 			indexMaximumValue = i;
@@ -117,11 +100,6 @@ float *arrayDetails(int numbers1[], int sizeOfArray){
 			indexMinimumValue = i;
 		}
 	}
-//    printf("minimumValue %d\n", minimumValue);
-//    printf("indexMinimumValue %d\n", indexMinimumValue);
-//    printf("mean %0.2f\n", totalValueOfElements/arraySize);
-//    printf("maximumValue %d\n", maximumValue);
-//    printf("indexMaximumValue %d\n", indexMaximumValue);
 
 	
 
