@@ -45,21 +45,21 @@ void introToCS332532(int n){
 }
 int UABNumber(int n2){
 	int total = 0;
+	int boolean;
     for (int i = 1; i < n2; i++){
         if (n2%i==0){
 			total += i;
         }
     }
-	printf("Total: %d\n",total);
 	if(total == n2){
-		printf("True\n");
+		boolean = 1;
 	} else{
-		printf("False\n");
+		boolean = 0;
 	}
 
 
 	
-	return 1;
+	return boolean;
 
 }
 int reverseNumber(int n3){
@@ -75,11 +75,10 @@ int reverseNumber(int n3){
 }
 
 
-int smallerThanIndex(){
+int smallerThanIndex(int numbers[], int arraySize){
     // int numbers[arraySize];
     int counter = 0;
-    int numbers[] = {10,20,1,2,30};
-    int arraySize = sizeof(numbers)/sizeof(*(numbers));
+//    int arraySize = sizeof(numbers)/sizeof(*(numbers));
 
     for (int i = 0; i < arraySize; i++){
         if (*(numbers+i) < i){
@@ -91,10 +90,13 @@ int smallerThanIndex(){
     return counter;
 }
 
-float *arrayDetails(){
-    int numbers[] = {-8, -23, 18, 103, 0, 1, -4, 631, 3, -41, 5};
-    int arraySize = sizeof(numbers)/sizeof(*(numbers));
-    printf("arraySize %d\n", arraySize);
+float *arrayDetails(int numbers1[], int sizeOfArray){
+//    int numbers[] = {-8, -23, 18, 103, 0, 1, -4, 631, 3, -41, 5};
+//    int arraySize = sizeof(numbers)/sizeof(*(numbers));
+
+	int *numbers = numbers1;
+	int arraySize = sizeOfArray;
+//    printf("arraySize %d\n", arraySize);
 
 	int minimumValue = *(numbers)+1;
 	int indexMinimumValue = -1;
@@ -115,11 +117,11 @@ float *arrayDetails(){
 			indexMinimumValue = i;
 		}
 	}
-    printf("minimumValue %d\n", minimumValue);
-    printf("indexMinimumValue %d\n", indexMinimumValue);
-    printf("mean %0.2f\n", totalValueOfElements/arraySize);
-    printf("maximumValue %d\n", maximumValue);
-    printf("indexMaximumValue %d\n", indexMaximumValue);
+//    printf("minimumValue %d\n", minimumValue);
+//    printf("indexMinimumValue %d\n", indexMinimumValue);
+//    printf("mean %0.2f\n", totalValueOfElements/arraySize);
+//    printf("maximumValue %d\n", maximumValue);
+//    printf("indexMaximumValue %d\n", indexMaximumValue);
 
 	
 
@@ -131,65 +133,91 @@ float *arrayDetails(){
 	*(array+3) = totalValueOfElements/arraySize;
 	*(array+4) = maximumValue;
 	*(array+5) = indexMaximumValue;
-//    printf("testtest %f\n", *(array+1));
-
 
     return array;
 
 }
 
+/*
+Method that takes a float array a[] and an int size that represents the length of the array a[]. It then prints out the elements in the array to the console.
+Parameters: int a[] float size
+Return: void
+*/
+void printFloatArray(float a[], int size)
+{
+
+	printf("[");
+	for (int i = 0; i < size; i++){
+		if(i < size-1){ 
+			printf("%0.02f,",  *(a + i));
+		}else{
+			printf("%0.02f]",  *(a + i));
+		}
+	}
+	printf("\n");
+}
+/*
+Method that takes an integer array a[] and an int size that represents the length of the array a[]. It then prints out the elements in the array to the console.
+Parameters: int a[] int size
+Return: void
+*/
+void printIntArray(int a[], int size)
+{
+	printf("[");
+	for (int i = 0; i < size; i++){
+		if(i < size-1){ 
+			printf("%d,", *(a + i));
+		}else{
+			printf("%d]", *(a + i));
+		}
+	}
+	printf("\n");
+}
 
 int main()
 {
-	
+     // Take user input and then call funtion using the input
+     printf("=========Intro To CS332532=========\n");
+     int n;
+     printf("Enter an integer for n: ");
+     scanf("%d", &n);
+     introToCS332532(n);
 
 
-    // // Take user input and then call funtion using the input
-    // printf("=========Intro To CS332532=========\n");
-    // int n;
-    // printf("Enter an integer for n: ");
-    // scanf("%d", &n);  
-    // introToCS332532(n);
-
-	
-	
-    // // Take user input and then call funtion using the input
-    // printf("========= UABNumber =========\n");
-    // int n2;
-    // printf("Enter an integer for n2: ");
-    // scanf("%d", &n2);  
-	// UABNumber(n2);
+     // Take user input and then call funtion using the input
+     printf("========= UABNumber =========\n");
+     int n2;
+     printf("Enter an integer for n2: ");
+     scanf("%d", &n2);
+    printf("Boolean: %d\n", UABNumber(n2));
 
 
 
-    // // Take user input and then call funtion using the input
-    // printf("========= reverseNumber =========\n");
-    // int n3;
-    // printf("Enter an integer for n3: ");
-    // scanf("%d",&n3);  
-	// printf("%d",reverseNumber(n3));
+     // Take user input and then call funtion using the input
+     printf("========= reverseNumber =========\n");
+     int n3;
+     printf("Enter an integer for n3: ");
+     scanf("%d",&n3);
+	 printf("%d\n",reverseNumber(n3));
 
 
-    // // Take user input and then call funtion using the input
-    // printf("========= smallerThanIndex =========\n");
-    // // int n4;
-    // // printf("Enter an integer for n4: ");
-    // // scanf("%d",&n4);  
-	// printf("%d",smallerThanIndex());
-//    printf("%0.2f", *(arrayDetails()+1));
-	float *ptr = arrayDetails();
-	printf("[");
-	for(int i=0; i < 6; i++){
-		if(i!=5){
-			printf("%0.2f,", *(ptr+i));
-		} else {
-			printf("%0.2f", *(ptr+i));
-		}
-	}
-	printf("]");
-//    printf("testtest %f\n", *(arrayDetails()+1));
-// 	for(int i=0;ptr[i]!='';i++){
-//		printf("%d ", ptr[i]);
-//	}
+     // Take user input and then call funtion using the input
+     printf("========= smallerThanIndex =========\n");
+	 int numbers[] = {10,20,1,2,30};
+    printf("[");
+    for (int i = 0; i < 5; i++) {
+        printf("%d,",*(numbers + i));
+    }
+    printf("]\n");
+    printf("Numbers smaller than: %d\n",smallerThanIndex(numbers, sizeof(numbers)/sizeof(*(numbers))));
+
+
+    printf("========= arrayDetails =========\n");
+    int numbers1[] = {-8, -23, 18, 103, 0, 1, -4, 631, 3, -41, 5};
+    printf("Input Array: ");
+	printIntArray(numbers1,11);
+	float *ptr = arrayDetails(numbers1,11);
+    printf("Returned Array: ");
+	printFloatArray(ptr,6);
 }
 
