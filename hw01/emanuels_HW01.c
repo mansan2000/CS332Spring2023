@@ -12,7 +12,7 @@ void introToCS332532(int n){
         }
     }
     if (n%3==0 && n%5==0){
-        printf("UAB CS 332&532\n");
+        printf("UAB CS 332&532\a");
         return;
 
     }
