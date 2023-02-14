@@ -11,73 +11,98 @@
 #define MAX_PATH_SIZE 2000
 
 char *filetype(unsigned char type) {
-  char *str;
-  switch(type) {
-  case DT_BLK: str = "block device"; break;
-  case DT_CHR: str = "character device"; break;
-  case DT_DIR: str = "directory"; break;
-  case DT_FIFO: str = "named pipe (FIFO)"; break;
-  case DT_LNK: str = "symbolic link"; break;
-  case DT_REG: str = "regular file"; break;
-  case DT_SOCK: str = "UNIX domain socket"; break;
-  case DT_UNKNOWN: str = "unknown file type"; break;
-  default: str = "UNKNOWN";
-  }
-  return str;
+    char *str;
+    switch (type) {
+        case DT_BLK:
+            str = "block device";
+            break;
+        case DT_CHR:
+            str = "character device";
+            break;
+        case DT_DIR:
+            str = "directory";
+            break;
+        case DT_FIFO:
+            str = "named pipe (FIFO)";
+            break;
+        case DT_LNK:
+            str = "symbolic link";
+            break;
+        case DT_REG:
+            str = "regular file";
+            break;
+        case DT_SOCK:
+            str = "UNIX domain socket";
+            break;
+        case DT_UNKNOWN:
+            str = "unknown file type";
+            break;
+        default:
+            str = "UNKNOWN";
+    }
+    return str;
 }
 
-void printStat(struct stat sb, int tab){
-
+void printStat(struct stat sb, int tab) {
 
 
     printf("%*s  File Permissions:         ", tab, " ");
-    printf( (S_ISDIR(sb.st_mode)) ? "d" : "-");
-    printf( (sb.st_mode & S_IRUSR) ? "r" : "-");
-    printf( (sb.st_mode & S_IWUSR) ? "w" : "-");
-    printf( (sb.st_mode & S_IXUSR) ? "x" : "-");
-    printf( (sb.st_mode & S_IRGRP) ? "r" : "-");
-    printf( (sb.st_mode & S_IWGRP) ? "w" : "-");
-    printf( (sb.st_mode & S_IXGRP) ? "x" : "-");
-    printf( (sb.st_mode & S_IROTH) ? "r" : "-");
-    printf( (sb.st_mode & S_IWOTH) ? "w" : "-");
-    printf( (sb.st_mode & S_IXOTH) ? "x" : "-");
+    printf((S_ISDIR(sb.st_mode)) ? "d" : "-");
+    printf((sb.st_mode & S_IRUSR) ? "r" : "-");
+    printf((sb.st_mode & S_IWUSR) ? "w" : "-");
+    printf((sb.st_mode & S_IXUSR) ? "x" : "-");
+    printf((sb.st_mode & S_IRGRP) ? "r" : "-");
+    printf((sb.st_mode & S_IWGRP) ? "w" : "-");
+    printf((sb.st_mode & S_IXGRP) ? "x" : "-");
+    printf((sb.st_mode & S_IROTH) ? "r" : "-");
+    printf((sb.st_mode & S_IWOTH) ? "w" : "-");
+    printf((sb.st_mode & S_IXOTH) ? "x" : "-");
     printf("\n");
-//    printf("I-node number:            %ld\n", (long) sb.st_ino);
-//
-//    printf("  Mode:                     %lo (octal)\n",
-//           (unsigned long) sb.st_mode);
-//
-//    printf("Link count:               %ld\n", (long) sb.st_nlink);
-//    printf("Ownership:                UID=%ld   GID=%ld\n",
-//           (long) sb.st_uid, (long) sb.st_gid);
+    if (S_ISDIR(sb.st_mode)) {
+        printf("%*s  File size:                %lld bytes\n", tab, " ",
+               (long long) 0);
 
-//    printf("Preferred I/O block size: %ld bytes\n",
-//           (long) sb.st_blksize);
-    printf("%*s  File size:                %lld bytes\n", tab, " ",
-           (long long) sb.st_size);
-//    printf("Blocks allocated:         %lld\n",
-//           (long long) sb.st_blocks);
+    } else {
+        printf("%*s  File size:                %lld bytes\n", tab, " ",
+               (long long) sb.st_size);
 
-//    printf("Last status change:       %d", ctime(&sb.st_ctime));
+    }
     printf("%*s  Last file access:         %s\n", tab, " ", ctime(&sb.st_atime));
-//    printf("Last file modification:   %d", ctime(&sb.st_mtime));
 }
 
-void traverseDirectory(char *path, char *relativePath, int tabSpaces) {
+int checkSize(struct stat sb, int size) {
+    int flag = 0;
+    if (sb.st_size <= size) {
+        flag = 1;
+    }
+    return flag;
+
+}
+
+int checkSubstr(char *fileName, char *substr, int depth, int depthLimit) {
+    int flag = 0;
+    if (strstr(fileName, substr) != NULL && depth <= depthLimit) {
+        flag = 1;
+    }
+    return flag;
+
+}
+
+void traverseDirectory(char *path, int tabSpaces, int depth) {
 
     struct dirent *dirent;
     DIR *parentDir;
 
     // First, we need to open the directory.
     parentDir = opendir(path);
-    if (parentDir == NULL) { 
-        printf ("Error opening directory '%s'\n", path); 
-        exit (-1);
+    if (parentDir == NULL) {
+        printf("Error opening directory '%s'\n", path);
+        exit(-1);
     }
-    int count = 1; 
+    int count = 1;
     // After we open the directory, we can read the contents of the directory, file by file.
-    char pathString[MAX_PATH_SIZE+1];
-    while((dirent = readdir(parentDir)) != NULL){
+    char pathString[MAX_PATH_SIZE + 1];
+    while ((dirent = readdir(parentDir)) != NULL) {
 
         // If the file's name is "." or "..", ignore them. We do not want to infinitely recurse.
         if (strcmp(dirent->d_name, ".") == 0 || strcmp(dirent->d_name, "..") == 0) {
@@ -86,43 +111,33 @@ void traverseDirectory(char *path, char *relativePath, int tabSpaces) {
 
 
 
-//        char cwd[MAX_PATH_SIZE];
         char *cwd = (char *) malloc(MAX_PATH_SIZE);
-//        memmove(path, path + 1, strlen(path));
-//        path[strlen(path)] = '\0';
-//        printf("path%s\n", path);
 
         strcat(cwd, path);
         strcat(cwd, "/");
         strcat(cwd, dirent->d_name);
-//        realpath(dirent->d_name, path);
-//        printf("cwd %s\n", cwd);
-//        printf("realPath %s\n", pathString);
-//        getcwd(cwd, sizeof (cwd));
-//        printf("cwd %s\n", cwd);
-//        if (dirent->d_type == DT_DIR){
-////            printf("path: sdf :%s\n", relativePath);
-//            strcat(cwd, dirent->d_name);
-////            strcat(cwd,"/");
-//
-//        }
-//        strcat(cwd,"/");
-//        strcat(cwd, relativePath);
-////        strcat(cwd, path);
-//        strcat(cwd,"/");
-//        strcat(cwd, dirent->d_name);
-//        printf("cwd %s\n", cwd);
-
-//        printf("cwdCAT %s\n", cwd);
-//        realpath(dirent->d_name, cwd);
-//        printf("cwd %s\n", cwd);
         struct stat buf;
-//        printf("test %s\n", pathString);
-//        printf("test %ld\n", buf.st_size);
-        if (stat(cwd, &buf) < 0){
+        if (lstat(cwd, &buf) < 0) {
             printf("lstat error for: %s\n", dirent->d_name);
         }
 
+//        if (checkSize(buf, 600) == 0){
+//            continue;
+//        }
+//        printf("name: %s\n", dirent->d_name);
+//        printf("cwd: %s\n", cwd);
+//        if (strcmp(dirent->d_name,"file2.txt")) {
+//            printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+//        }
+//        int bool = 0;
+        if (dirent->d_type == DT_DIR) {
+            goto LABEL;
+
+        } else {
+            if (DT_DIR && checkSubstr(dirent->d_name, "file2", depth, 2) != 1) {
+                continue;
+            }
+        }
 
 
 
@@ -133,50 +148,44 @@ void traverseDirectory(char *path, char *relativePath, int tabSpaces) {
         // Changes for symbolic link
         char target[PATH_MAX];
         ssize_t b;
-        if (dirent->d_type == DT_LNK){
+        if (dirent->d_type == DT_LNK) {
             b = readlink(dirent->d_name, target, PATH_MAX - 1);
             printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
         } else {
-            // Print the formatted file.
-//            printf("Test %s\n", dirent->d_name);
-//            printf("path%s\n", path);
             printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
+            printf("%d", depth);
 
         }
         printStat(buf, 4 * tabSpaces);
+        LABEL:
 
         count++;
         // Check to see if the file type is a directory. If it is, recursively call traverseDirectory on it.
         if (dirent->d_type == DT_DIR) {
             // Build the new file path.
             char *subDirPath = (char *) malloc(MAX_PATH_SIZE);
-//            printf("path: %s\n", path);
             strcpy(subDirPath, path);
-//            strcat(relativePath, "/");
-//            strcat(relativePath, dirent->d_name);
             strcat(subDirPath, "/");
             strcat(subDirPath, dirent->d_name);
-//            printf("relativePath: %s\n", relativePath);
-//            printf("subDirPath: %s\n", subDirPath);
-            traverseDirectory(subDirPath, relativePath , tabSpaces + 1);
+            traverseDirectory(subDirPath, tabSpaces + 1, depth + 1);
         }
-    } 
+    }
 }
 
 int main(int argc, char **argv) {
 
     int tabSpaces = 0;
+    int depth = 0;
     char relativePath[MAX_PATH_SIZE];
 
     // Check to see if the user provides at least 2 command-line-arguments.
     if (argc < 2) {
-        traverseDirectory(".", relativePath, tabSpaces);
+        traverseDirectory(".", tabSpaces, depth);
 //        printf ("Usage: %s <dirname>\n", argv[0]);
 //        exit(-1);
     } else {
-        traverseDirectory(argv[1], relativePath, tabSpaces);
+        traverseDirectory(argv[1], tabSpaces, depth);
     }
-
 
 
     return 0;
