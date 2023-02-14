@@ -88,7 +88,7 @@ int checkSubstr(char *fileName, char *substr, int depth, int depthLimit) {
 
 }
 
-void traverseDirectory(char *path, int tabSpaces, int depth) {
+void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag) {
 
     struct dirent *dirent;
     DIR *parentDir;
@@ -111,8 +111,18 @@ void traverseDirectory(char *path, int tabSpaces, int depth) {
 
 
 
-        char *cwd = (char *) malloc(MAX_PATH_SIZE);
 
+
+//        printf("name: %s\n", dirent->d_name);
+//        printf("cwd: %s\n", cwd);
+//        if (strcmp(dirent->d_name,"file2.txt")) {
+//            printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+//        }
+//        int bool = 0;
+
+        char target[PATH_MAX];
+        ssize_t b;
+        char *cwd = (char *) malloc(MAX_PATH_SIZE);
         strcat(cwd, path);
         strcat(cwd, "/");
         strcat(cwd, dirent->d_name);
@@ -120,44 +130,69 @@ void traverseDirectory(char *path, int tabSpaces, int depth) {
         if (lstat(cwd, &buf) < 0) {
             printf("lstat error for: %s\n", dirent->d_name);
         }
+        switch (argsFlag) {
+            case 1:
 
-//        if (checkSize(buf, 600) == 0){
-//            continue;
-//        }
-//        printf("name: %s\n", dirent->d_name);
-//        printf("cwd: %s\n", cwd);
-//        if (strcmp(dirent->d_name,"file2.txt")) {
-//            printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-//        }
-//        int bool = 0;
-        if (dirent->d_type == DT_DIR) {
-            goto LABEL;
+                if (dirent->d_type == DT_LNK) {
+                    b = readlink(dirent->d_name, target, PATH_MAX - 1);
+                    printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
+                } else {
+                    printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
+                    printf("%d", depth);
 
-        } else {
-            if (DT_DIR && checkSubstr(dirent->d_name, "file2", depth, 2) != 1) {
-                continue;
-            }
+                }
+                printStat(buf, 4 * tabSpaces);
+                break;
+            case 2:
+                if (dirent->d_type == DT_DIR) {
+                    break;
+
+                } else {
+                    if (DT_DIR && checkSubstr(dirent->d_name, "file2", depth, 2) == 1) {
+//                         Changes for symbolic link
+                        if (dirent->d_type == DT_LNK) {
+                            b = readlink(dirent->d_name, target, PATH_MAX - 1);
+                            printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name,
+                                   target);
+                        } else {
+                            printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name,
+                                   filetype(dirent->d_type));
+
+                        }
+                    }
+                }
+
+                break;
+            case 3:
+                if (checkSize(buf, 600) == 1) {
+                    // Changes for symbolic link
+                    if (dirent->d_type == DT_LNK) {
+                        b = readlink(dirent->d_name, target, PATH_MAX - 1);
+                        printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
+                    } else {
+                        printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
+//                    printf("%d", depth);
+
+                    }
+                    printStat(buf, 4 * tabSpaces);
+                }
+
+                break;
+            default:
+                // Changes for symbolic link
+                if (dirent->d_type == DT_LNK) {
+                    b = readlink(dirent->d_name, target, PATH_MAX - 1);
+                    printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
+                } else {
+                    printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
+//                    printf("%d", depth);
+
+                }
+//                printStat(buf, 4 * tabSpaces);
+                break;
+
         }
 
-
-
-
-
-
-
-        // Changes for symbolic link
-        char target[PATH_MAX];
-        ssize_t b;
-        if (dirent->d_type == DT_LNK) {
-            b = readlink(dirent->d_name, target, PATH_MAX - 1);
-            printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
-        } else {
-            printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
-            printf("%d", depth);
-
-        }
-        printStat(buf, 4 * tabSpaces);
-        LABEL:
 
         count++;
         // Check to see if the file type is a directory. If it is, recursively call traverseDirectory on it.
@@ -167,7 +202,7 @@ void traverseDirectory(char *path, int tabSpaces, int depth) {
             strcpy(subDirPath, path);
             strcat(subDirPath, "/");
             strcat(subDirPath, dirent->d_name);
-            traverseDirectory(subDirPath, tabSpaces + 1, depth + 1);
+            traverseDirectory(subDirPath, tabSpaces + 1, depth + 1, argsFlag);
         }
     }
 }
@@ -180,11 +215,11 @@ int main(int argc, char **argv) {
 
     // Check to see if the user provides at least 2 command-line-arguments.
     if (argc < 2) {
-        traverseDirectory(".", tabSpaces, depth);
+        traverseDirectory(".", tabSpaces, depth, 3);
 //        printf ("Usage: %s <dirname>\n", argv[0]);
 //        exit(-1);
     } else {
-        traverseDirectory(argv[1], tabSpaces, depth);
+        traverseDirectory(argv[1], tabSpaces, depth, 3);
     }
 
 
