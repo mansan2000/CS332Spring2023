@@ -77,7 +77,6 @@ void traverseDirectory(char *path, char *relativePath, int tabSpaces) {
     int count = 1; 
     // After we open the directory, we can read the contents of the directory, file by file.
     char pathString[MAX_PATH_SIZE+1];
-    char cwd[MAX_PATH_SIZE];
     while((dirent = readdir(parentDir)) != NULL){
 
         // If the file's name is "." or "..", ignore them. We do not want to infinitely recurse.
@@ -87,26 +86,31 @@ void traverseDirectory(char *path, char *relativePath, int tabSpaces) {
 
 
 
+//        char cwd[MAX_PATH_SIZE];
+        char *cwd = (char *) malloc(MAX_PATH_SIZE);
 //        memmove(path, path + 1, strlen(path));
 //        path[strlen(path)] = '\0';
 //        printf("path%s\n", path);
 
-//        strcat(cwd, path);
+        strcat(cwd, path);
+        strcat(cwd, "/");
+        strcat(cwd, dirent->d_name);
 //        realpath(dirent->d_name, path);
 //        printf("cwd %s\n", cwd);
 //        printf("realPath %s\n", pathString);
-        getcwd(cwd, sizeof (cwd));
+//        getcwd(cwd, sizeof (cwd));
+//        printf("cwd %s\n", cwd);
 //        if (dirent->d_type == DT_DIR){
 ////            printf("path: sdf :%s\n", relativePath);
-////            strcat(path, dirent->d_name);
+//            strcat(cwd, dirent->d_name);
 ////            strcat(cwd,"/");
 //
 //        }
-        strcat(cwd,"/");
-        strcat(cwd, relativePath);
-//        strcat(cwd, path);
-        strcat(cwd,"/");
-        strcat(cwd, dirent->d_name);
+//        strcat(cwd,"/");
+//        strcat(cwd, relativePath);
+////        strcat(cwd, path);
+//        strcat(cwd,"/");
+//        strcat(cwd, dirent->d_name);
 //        printf("cwd %s\n", cwd);
 
 //        printf("cwdCAT %s\n", cwd);
@@ -115,7 +119,7 @@ void traverseDirectory(char *path, char *relativePath, int tabSpaces) {
         struct stat buf;
 //        printf("test %s\n", pathString);
 //        printf("test %ld\n", buf.st_size);
-        if (lstat(cwd, &buf) < 0){
+        if (stat(cwd, &buf) < 0){
             printf("lstat error for: %s\n", dirent->d_name);
         }
 
@@ -134,6 +138,8 @@ void traverseDirectory(char *path, char *relativePath, int tabSpaces) {
             printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
         } else {
             // Print the formatted file.
+//            printf("Test %s\n", dirent->d_name);
+//            printf("path%s\n", path);
             printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
 
         }
@@ -146,8 +152,8 @@ void traverseDirectory(char *path, char *relativePath, int tabSpaces) {
             char *subDirPath = (char *) malloc(MAX_PATH_SIZE);
 //            printf("path: %s\n", path);
             strcpy(subDirPath, path);
-            strcat(relativePath, "/");
-            strcat(relativePath, dirent->d_name);
+//            strcat(relativePath, "/");
+//            strcat(relativePath, dirent->d_name);
             strcat(subDirPath, "/");
             strcat(subDirPath, dirent->d_name);
 //            printf("relativePath: %s\n", relativePath);
