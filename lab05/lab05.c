@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <dirent.h>
 
-// The function fileType can be used to determine the type of a file (e.g. directory, a socket, a symbolic link, ...).
+// The function fileType can be used to determine the type of file (e.g. directory, a socket, a symbolic link, ...).
 char *fileType(unsigned char type) {
     char *str;
     switch(type) {
@@ -22,28 +22,40 @@ char *fileType(unsigned char type) {
     return str;
 }
 
-int main (int argc, char **argv) {
+void traverseDirectory(char *path, int tabSpaces){
+
     struct dirent *dirent;
     DIR *parentDir;
+    parentDir = opendir (path);
+    if (parentDir == NULL) {
+        printf ("Error opening directory '%s'\n", path);
+        exit (-1);
+    }
+    // Before we can read the contents of the directory, we must open the directory.
+    int count = 1;
+    // While there's still something left to read in the directory ...
+    while((dirent = readdir(parentDir)) != NULL){
+        if(strcmp())
+        // Print the name of the file and its type.
+        printf ("[%d] %s (%s)\n", count, dirent->d_name, fileType(dirent->d_type));
+        count++;
+    }
+
+
+    closedir (parentDir);
+
+}
+
+
+int main (int argc, char **argv) {
+//    struct dirent *dirent;
+//    DIR *parentDir;
 
     if (argc < 2) {
         printf ("Usage: %s <dirname>\n", argv[0]);
         exit(-1);
     }
 
-    // Before we can read the contents of the directory, we must open the directory.
-    parentDir = opendir (argv[1]);
-    if (parentDir == NULL) {
-        printf ("Error opening directory '%s'\n", argv[1]);
-        exit (-1);
-    }
-    int count = 1;
-    // While there's still something left to read in the directory ...
-    while((dirent = readdir(parentDir)) != NULL){
-        // Print the name of the file and its type.
-        printf ("[%d] %s (%s)\n", count, dirent->d_name, fileType(dirent->d_type));
-        count++;
-    }
-    closedir (parentDir);
+
     return 0;
 }

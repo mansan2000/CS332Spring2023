@@ -23,3 +23,4 @@ add_executable(lseekExample lab04/lseekExample.c)
 
 add_executable(test test/test.c)
 add_executable(lab05 lab05/lab05.c)
+add_executable(modifed_readdir_v2_TAB lab05/TAcode.c)

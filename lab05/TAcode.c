@@ -63,11 +63,13 @@ int main(int argc, char **argv) {
     int tabSpaces = 0;
 
     // Check to see if the user provides at least 2 command-line-arguments.
-    if (argc < 2) { 
-        printf ("Usage: %s <dirname>\n", argv[0]); 
-        exit(-1);
+    if (argc < 2) {
+        traverseDirectory(".", tabSpaces);
+//        printf ("Usage: %s <dirname>\n", argv[0]);
+//        exit(-1);
+    } else {
+        traverseDirectory(argv[1], tabSpaces);
     }
 
-    traverseDirectory(argv[1], tabSpaces);
     return 0;
 }
