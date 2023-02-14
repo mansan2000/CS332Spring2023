@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
+#include <unistd.h>
 
 #define MAX_PATH_SIZE 2000
 
@@ -40,9 +41,17 @@ void traverseDirectory(char *path, int tabSpaces) {
         if (strcmp(dirent->d_name, ".") == 0 || strcmp(dirent->d_name, "..") == 0) {
             continue;
         }
+        char target[PATH_MAX];
+        ssize_t b;
+        if (dirent->d_type == DT_LNK){
+            b = readlink(dirent->d_name, target, PATH_MAX - 1);
+            printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
+        } else {
+            // Print the formatted file.
+            printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
 
-        // Print the formated file.
-        printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type)); 
+        }
+
 
         count++; 
 
@@ -63,11 +72,15 @@ int main(int argc, char **argv) {
     int tabSpaces = 0;
 
     // Check to see if the user provides at least 2 command-line-arguments.
-    if (argc < 2) { 
-        printf ("Usage: %s <dirname>\n", argv[0]); 
-        exit(-1);
+    if (argc < 2) {
+        traverseDirectory(".", tabSpaces);
+//        printf ("Usage: %s <dirname>\n", argv[0]);
+//        exit(-1);
+    } else {
+        traverseDirectory(argv[1], tabSpaces);
     }
 
-    traverseDirectory(argv[1], tabSpaces);
+
+
     return 0;
 }
