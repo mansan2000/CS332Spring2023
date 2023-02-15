@@ -5,8 +5,8 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -lwinmm")
 
 
-
 include_directories(hw01/asgn2)
+include_directories(HW02)
 
 #add_executable(CS332Spring2023
 ##        hw01/asgn2/asgn2.c
