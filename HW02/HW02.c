@@ -88,7 +88,7 @@ int checkSubstr(char *fileName, char *substr, int depth, int depthLimit) {
 
 }
 
-void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char *subStr, int fileSize) {
+void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char *subStr, int fileSize, int SFlag) {
 
     struct dirent *dirent;
     DIR *parentDir;
@@ -136,7 +136,16 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
                     break;
 
                 } else {
-                    if (DT_DIR && checkSubstr(dirent->d_name, "file2", depth, 2) == 1) {
+                    char *space_pos = strchr(subStr, ' ');
+                    size_t len1 = space_pos - subStr; // length of first string
+                    size_t len2 = strlen(space_pos + 1); // length of second string
+                    char *str1 = malloc(len1 + 1); // allocate memory for first string
+                    char *str2 = malloc(len2 + 1); // allocate memory for second string
+                    strncpy(str1, subStr, len1); // copy first string
+                    strncpy(str2, space_pos + 1, len2); // copy second string
+                    str1[len1] = '\0'; // null-terminate first string
+                    str2[len2] = '\0'; // null-terminate second string
+                    if (DT_DIR && checkSubstr(dirent->d_name, str1, depth, atoi(str2)) == 1) {
 //                         Changes for symbolic link
                         if (dirent->d_type == DT_LNK) {
                             b = readlink(dirent->d_name, target, PATH_MAX - 1);
@@ -147,7 +156,12 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
                                    filetype(dirent->d_type));
 
                         }
+                        if (SFlag == 1) {
+                            printStat(buf, 4 * tabSpaces);
+                        }
                     }
+                    free(str1); // free memory for first string
+                    free(str2); // free memory for second strin
                 }
 
                 break;
@@ -163,7 +177,9 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
 //                    printf("%d", depth);
 
                     }
-                    printStat(buf, 4 * tabSpaces);
+                    if (SFlag == 1) {
+                        printStat(buf, 4 * tabSpaces);
+                    }
                 }
 
                 break;
@@ -189,7 +205,7 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
             strcpy(subDirPath, path);
             strcat(subDirPath, "/");
             strcat(subDirPath, dirent->d_name);
-            traverseDirectory(subDirPath, tabSpaces + 1, depth + 1, argsFlag, subStr, fileSize);
+            traverseDirectory(subDirPath, tabSpaces + 1, depth + 1, argsFlag, subStr, fileSize, SFlag);
         }
     }
 }
@@ -204,6 +220,9 @@ int main(int argc, char **argv) {
     char *subStr = NULL;
     int fileSize = 0;
     char *startingFolder = NULL;
+    int SFlag = 0;
+    int sFlag = 0;
+    int fFlag = 0;
 //    char relativePath[MAX_PATH_SIZE];
 //    int i, j;
 //    for (i = 0; i < argc; i++) {
@@ -212,31 +231,35 @@ int main(int argc, char **argv) {
 //    }
 
     if (argc < 2) {
-        traverseDirectory(".", tabSpaces, depth, -1, subStr, fileSize);
+        traverseDirectory(".", tabSpaces, depth, -1, subStr, fileSize, SFlag);
 //        printf ("Usage: %s <dirname>\n", argv[0]);
 //        exit(-1);
-    }
-    else {
+    } else {
         startingFolder = argv[1];
         while ((opt = getopt(argc, argv, "Ss:f:")) != -1) {
             switch (opt) {
                 case 'S':
+//                    printf("S");
                     argFlag = 1;
+                    SFlag = 1;
                     break;
                 case 's':
+//                    printf("s");
+                    sFlag = 1;
                     argFlag = 2;
                     subStr = optarg;
                     break;
                 case 'f':
                     argFlag = 3;
                     fileSize += atoi(optarg);
+                    fFlag = 1;
                     break;
                 default:
                     printf("Invalid args");
             }
 
         }
-        traverseDirectory(startingFolder, tabSpaces, depth, argFlag, subStr, fileSize);
+        traverseDirectory(startingFolder, tabSpaces, depth, argFlag, subStr, fileSize, SFlag);
     }
 
 
