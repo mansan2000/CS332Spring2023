@@ -43,6 +43,15 @@ char *filetype(unsigned char type) {
     return str;
 }
 
+void displayForsFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
+                     int SFlag, char *subStr, int fileSize, int depth, int argsFlag);
+
+void displayForFFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
+                     int SFlag, char *subStr, int fileSize, int depth, int argsFlag);
+
+void displayForSFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
+                     int SFlag, char *subStr, int fileSize, int depth, int argsFlag);
+
 void printStat(struct stat sb, int tab) {
 
 
@@ -88,38 +97,6 @@ int checkSubstr(char *fileName, char *substr, int depth, int depthLimit) {
 
 }
 
-void displayForSFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b) {
-//    if (dirent->d_type == DT_LNK) {
-//        b = readlink(dirent->d_name, target, PATH_MAX - 1);
-//        printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
-//    } else {
-//        printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
-//
-//    }
-    printStat(*buf, 4 * tabSpaces);
-
-}
-
-void displayForFFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
-                     int fileSize) {
-    if (checkSize(*buf, fileSize) == 1) {
-        // Changes for symbolic link
-        if (dirent->d_type == DT_LNK) {
-            b = readlink(dirent->d_name, target, PATH_MAX - 1);
-            printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
-        } else {
-            printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name,
-                   filetype(dirent->d_type));
-//                    printf("%d", depth);
-
-        }
-//        if (SFlag == 1) {
-//            printStat(buf, 4 * tabSpaces);
-//        }
-        displayForSFlag(dirent, target,tabSpaces,count,buf,b);
-    }
-}
-
 void splitStringOnSpace(const char *str, char **str1, char **str2) {
     char *space_pos = strchr(str, ' ');
     if (space_pos == NULL) {
@@ -138,40 +115,100 @@ void splitStringOnSpace(const char *str, char **str1, char **str2) {
     (*str2)[len2] = '\0'; // null-terminate second string
 }
 
+void displayForSFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
+                     int SFlag, char *subStr, int fileSize, int depth, int argsFlag) {
+
+    argsFlag--;
+    SFlag = 0;
+    if (argsFlag <= 0) {
+        if (dirent->d_type == DT_LNK) {
+            b = readlink(dirent->d_name, target, PATH_MAX - 1);
+            printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
+        } else {
+            printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
+
+        }
+        printStat(*buf, 4 * tabSpaces);
+    }
+    if (subStr != NULL) {
+        displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
+    } else if (fileSize != 0) {
+        displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
+    } else if (SFlag == 1) {
+        displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
+    }
+
+
+}
+
+void displayForFFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
+                     int SFlag, char *subStr, int fileSize, int depth, int argsFlag) {
+    argsFlag--;
+//    printf("%d", argsFlag);
+    if (checkSize(*buf, fileSize) == 1) {
+        // Changes for symbolic link
+        if (argsFlag <= 0) {
+            if (dirent->d_type == DT_LNK) {
+                b = readlink(dirent->d_name, target, PATH_MAX - 1);
+                printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
+            } else {
+                printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name,
+                       filetype(dirent->d_type));
+//                    printf("%d", depth);
+
+            }
+        }
+        fileSize = 0;
+        if (subStr != NULL) {
+            displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
+        } else if (fileSize != 0) {
+            displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
+        } else if (SFlag == 1) {
+            displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
+        }
+//        if (SFlag == 1) {
+//            printStat(buf, 4 * tabSpaces);
+//        }
+//        displayForSFlag(dirent, target, tabSpaces, count, buf, b,);
+    }
+}
+
 void displayForsFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
-                     char *subStr, int depth) {
+                     int SFlag, char *subStr, int fileSize, int depth, int argsFlag) {
+    argsFlag--;
     if (dirent->d_type == DT_DIR) {
         return;
 
     } else {
-//        char *space_pos = strchr(subStr, ' ');
-//        size_t len1 = space_pos - subStr; // length of first string
-//        size_t len2 = strlen(space_pos + 1); // length of second string
-//        char *str1 = malloc(len1 + 1); // allocate memory for first string
-//        char *str2 = malloc(len2 + 1); // allocate memory for second string
-//        strncpy(str1, subStr, len1); // copy first string
-//        strncpy(str2, space_pos + 1, len2); // copy second string
-//        str1[len1] = '\0'; // null-terminate first string
-//        str2[len2] = '\0'; // null-terminate second string
+
         char *str1;
         char *str2;
         splitStringOnSpace(subStr, &str1, &str2);
         if (DT_DIR && checkSubstr(dirent->d_name, str1, depth, atoi(str2)) == 1) {
 //                         Changes for symbolic link
-            if (dirent->d_type == DT_LNK) {
-                b = readlink(dirent->d_name, target, PATH_MAX - 1);
-//                printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name,
-//                       target);
-            } else {
-//                printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name,
-//                       filetype(dirent->d_type));
+            if (argsFlag <= 0) {
+                if (dirent->d_type == DT_LNK) {
+                    b = readlink(dirent->d_name, target, PATH_MAX - 1);
+                    printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name,
+                           target);
+                } else {
+                    printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name,
+                           filetype(dirent->d_type));
 
+                }
             }
-            displayForFFlag(dirent, target,tabSpaces,count,buf,b,300);
 //            displayForSFlag(dirent, target,tabSpaces,count,buf,b);
 //            if (SFlag == 1) {
 //                printStat(*buf, 4 * tabSpaces);
 //            }
+        }
+        subStr = NULL;
+        if (subStr != NULL) {
+            displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
+        } else if (fileSize != 0) {
+            displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
+        } else if (SFlag == 1) {
+            displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
         }
         free(str1); // free memory for first string
         free(str2); // free memory for second strin
@@ -180,6 +217,7 @@ void displayForsFlag(struct dirent *dirent, char *target, int tabSpaces, int cou
 
 void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char *subStr, int fileSize, int SFlag) {
 
+//    printf("%s", subStr);
     struct dirent *dirent;
     DIR *parentDir;
 
@@ -206,10 +244,21 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
         strcat(cwd, "/");
         strcat(cwd, dirent->d_name);
         struct stat buf;
+        int firstOrNotFlag = 0;
+        int paramsPassedFlag = 0;
         if (lstat(cwd, &buf) < 0) {
             printf("lstat error for: %s\n", dirent->d_name);
         }
-        switch (argsFlag) {
+
+//        if (strcmp(subStr, "file2 3") == 0) {
+        if (subStr != NULL) {
+            displayForsFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag);
+        } else if (fileSize != 0) {
+            displayForFFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag);
+        } else if (SFlag == 1) {
+            displayForSFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag);
+        }
+        switch (5) {
             case 1:
 
 //                if (dirent->d_type == DT_LNK) {
@@ -220,7 +269,9 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
 //
 //                }
 //                printStat(buf, 4 * tabSpaces);
-                displayForSFlag(dirent, target, tabSpaces, count, &buf, b);
+                if (subStr != NULL) { paramsPassedFlag++; }
+                if (fileSize != 0) { paramsPassedFlag++; }
+//                displayForSFlag(dirent, target, tabSpaces, count, &buf, b, firstOrNotFlag, paramsPassedFlag);
                 break;
             case 2:
 //                if (dirent->d_type == DT_DIR) {
@@ -254,7 +305,7 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
 //                    free(str1); // free memory for first string
 //                    free(str2); // free memory for second strin
 //                }
-                displayForsFlag(dirent, target, tabSpaces, count, &buf, b, subStr, depth);
+//                displayForsFlag(dirent, target, tabSpaces, count, &buf, b, subStr, depth, firstOrNotFlag);
 
                 break;
             case 3:
@@ -273,18 +324,18 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
 //                        printStat(buf, 4 * tabSpaces);
 //                    }
 //                }
-                displayForFFlag(dirent, target, tabSpaces, count, &buf, b, fileSize);
+//                displayForFFlag(dirent, target, tabSpaces, count, &buf, b, fileSize);
 
                 break;
             default:
-                // Changes for symbolic link
-                if (dirent->d_type == DT_LNK) {
-                    b = readlink(dirent->d_name, target, PATH_MAX - 1);
-                    printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
-                } else {
-                    printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
-
-                }
+//                // Changes for symbolic link
+//                if (dirent->d_type == DT_LNK) {
+//                    b = readlink(dirent->d_name, target, PATH_MAX - 1);
+//                    printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
+//                } else {
+//                    printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
+//
+//                }
                 break;
 
         }
@@ -309,13 +360,13 @@ int main(int argc, char **argv) {
     int depth = 0;
 
     int opt;
-    int argFlag = -1;
+    int argFlag = 0;
     char *subStr = NULL;
     int fileSize = 0;
     char *startingFolder = NULL;
     int SFlag = 0;
-    int sFlag = 0;
-    int fFlag = 0;
+//    int sFlag = 0;
+//    int fFlag = 0;
 //    char relativePath[MAX_PATH_SIZE];
 //    int i, j;
 //    for (i = 0; i < argc; i++) {
@@ -333,26 +384,32 @@ int main(int argc, char **argv) {
             switch (opt) {
                 case 'S':
 //                    printf("S");
-                    argFlag = 1;
+                    argFlag++;
                     SFlag = 1;
                     break;
                 case 's':
 //                    printf("s");
-                    sFlag = 1;
-                    argFlag = 2;
+//                    realloc(subStr,400);
+//                    strcpy(subStr, optarg);
                     subStr = optarg;
+                    argFlag ++;
                     break;
                 case 'f':
-                    argFlag = 3;
+                    argFlag++;
                     fileSize += atoi(optarg);
-                    fFlag = 1;
+//                    fFlag = 1;
                     break;
                 default:
                     printf("Invalid args");
             }
 
         }
-        traverseDirectory(startingFolder, tabSpaces, depth, argFlag, subStr, fileSize, SFlag);
+//        if(subStr ==NULL){
+//            subStr = "";
+//        }
+        traverseDirectory(startingFolder, tabSpaces, depth, argFlag,  subStr, fileSize, SFlag);
+//        free(startingFolder);
+//        free(subStr);
     }
 
 
