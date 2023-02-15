@@ -159,6 +159,7 @@ void displayForFFlag(struct dirent *dirent, char *target, int tabSpaces, int cou
             }
         }
         fileSize = 0;
+//        SFlag = 0;
         if (subStr != NULL) {
             displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
         } else if (fileSize != 0) {
@@ -201,14 +202,14 @@ void displayForsFlag(struct dirent *dirent, char *target, int tabSpaces, int cou
 //            if (SFlag == 1) {
 //                printStat(*buf, 4 * tabSpaces);
 //            }
-        }
-        subStr = NULL;
-        if (subStr != NULL) {
-            displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
-        } else if (fileSize != 0) {
-            displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
-        } else if (SFlag == 1) {
-            displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
+            subStr = NULL;
+            if (subStr != NULL) {
+                displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
+            } else if (fileSize != 0) {
+                displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
+            } else if (SFlag == 1) {
+                displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag);
+            }
         }
         free(str1); // free memory for first string
         free(str2); // free memory for second strin
