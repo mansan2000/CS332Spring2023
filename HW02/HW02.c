@@ -114,6 +114,32 @@ void splitStringOnSpace(const char *str, char **str1, char **str2) {
     (*str2)[len2] = '\0';
 }
 
+void displayForNoFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
+                     int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
+
+    argsFlag--;
+    if (argsFlag <= 0) {
+        if (dirent->d_type == DT_LNK) {
+            b = readlink(dirent->d_name, target, PATH_MAX - 1);
+            printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
+        } else {
+            printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
+
+        }
+//        printStat(*buf, 4 * tabSpaces);
+    }
+    if (subStr != NULL) {
+        displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+    }else if (fileType != NULL) {
+        displayFortFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+    } else if (fileSize != 0) {
+        displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+    } else if (SFlag == 1) {
+        displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+    }
+
+
+}
 void displayForSFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
                      int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
 
@@ -261,6 +287,7 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
     int count = 1;
     // After we open the directory, we can read the contents of the directory, file by file.
     char pathString[MAX_PATH_SIZE + 1];
+    char *cwd = (char *) malloc(MAX_PATH_SIZE);
     while ((dirent = readdir(parentDir)) != NULL) {
 
         // If the file's name is "." or "..", ignore them. We do not want to infinitely recurse.
@@ -270,7 +297,7 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
 
         char target[PATH_MAX];
         ssize_t b;
-        char *cwd = (char *) malloc(MAX_PATH_SIZE);
+        memset(cwd, 0, MAX_PATH_SIZE);
         strcat(cwd, path);
         strcat(cwd, "/");
         strcat(cwd, dirent->d_name);
@@ -291,7 +318,7 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
             displayForSFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
         }
         else {
-            displayForSFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+            displayForNoFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
         }
 
         count++;
