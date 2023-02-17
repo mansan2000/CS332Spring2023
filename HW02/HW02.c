@@ -51,8 +51,12 @@ void displayForFFlag(struct dirent *dirent, char *target, int tabSpaces, int cou
 
 void displayForSFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
                      int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType);
+
 void displayFortFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
                      int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType);
+
+typedef void (*funcTarget)(struct dirent *, char *, int, int, struct stat *, ssize_t,
+                           int, char *, int, int, int, char *);
 
 void printStat(struct stat sb, int tab) {
     printf("%*s  File Permissions:         ", tab, " ");
@@ -97,6 +101,13 @@ int checkSubstr(char *fileName, char *substr, int depth, int depthLimit) {
 
 }
 
+/**
+ * Method to take in three strings and split the first one into two parts at the space character.
+ * It then assigns the seperated strings to the two other string params.
+ * @param str
+ * @param str1
+ * @param str2
+ */
 void splitStringOnSpace(const char *str, char **str1, char **str2) {
     char *space_pos = strchr(str, ' ');
     if (space_pos == NULL) {
@@ -114,8 +125,23 @@ void splitStringOnSpace(const char *str, char **str1, char **str2) {
     (*str2)[len2] = '\0';
 }
 
+/**
+ * This method takes in information
+ * @param dirent
+ * @param target
+ * @param tabSpaces
+ * @param count
+ * @param buf
+ * @param b
+ * @param SFlag
+ * @param subStr
+ * @param fileSize
+ * @param depth
+ * @param argsFlag
+ * @param fileType
+ */
 void displayForNoFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
-                     int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
+                      int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
 
     argsFlag--;
     if (argsFlag <= 0) {
@@ -126,24 +152,14 @@ void displayForNoFlag(struct dirent *dirent, char *target, int tabSpaces, int co
             printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
 
         }
-//        printStat(*buf, 4 * tabSpaces);
     }
-    if (subStr != NULL) {
-        displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-    }else if (fileType != NULL) {
-        displayFortFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-    } else if (fileSize != 0) {
-        displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-    } else if (SFlag == 1) {
-        displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-    }
-
 
 }
 void displayForSFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
                      int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
 
     argsFlag--;
+    funcTarget funcTargCall = NULL;
     SFlag = 0;
     if (argsFlag <= 0) {
         if (dirent->d_type == DT_LNK) {
@@ -156,13 +172,17 @@ void displayForSFlag(struct dirent *dirent, char *target, int tabSpaces, int cou
         printStat(*buf, 4 * tabSpaces);
     }
     if (subStr != NULL) {
-        displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-    }else if (fileType != NULL) {
-        displayFortFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+        funcTargCall = &displayForsFlag;
+    } else if (fileType != NULL) {
+        funcTargCall = &displayFortFlag;
     } else if (fileSize != 0) {
-        displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+        funcTargCall = &displayForFFlag;
     } else if (SFlag == 1) {
-        displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+        funcTargCall = &displayForSFlag;
+    }
+    if (funcTargCall != NULL) {
+        (*funcTargCall)(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag,
+                        fileType);
     }
 
 
@@ -171,12 +191,13 @@ void displayForSFlag(struct dirent *dirent, char *target, int tabSpaces, int cou
 void displayFortFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
                      int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
     argsFlag--;
+    funcTarget funcTargCall = NULL;
     int x;
-    if (strcmp(fileType, "d") == 0){
+    if (strcmp(fileType, "d") == 0) {
 
         x = DT_DIR;
     }
-    if (strcmp(fileType, "f") == 0){
+    if (strcmp(fileType, "f") == 0) {
 
         x = DT_REG;
     }
@@ -194,19 +215,25 @@ void displayFortFlag(struct dirent *dirent, char *target, int tabSpaces, int cou
         }
         fileType = NULL;
         if (subStr != NULL) {
-            displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-        }else if (fileType != NULL) {
-            displayFortFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+            funcTargCall = &displayForsFlag;
+        } else if (fileType != NULL) {
+            funcTargCall = &displayFortFlag;
         } else if (fileSize != 0) {
-            displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+            funcTargCall = &displayForFFlag;
         } else if (SFlag == 1) {
-            displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+            funcTargCall = &displayForSFlag;
+        }
+        if (funcTargCall != NULL) {
+            (*funcTargCall)(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag,
+                            fileType);
         }
     }
 }
+
 void displayForFFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
                      int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
     argsFlag--;
+    funcTarget funcTargCall = NULL;
     if (checkSize(*buf, fileSize) == 1) {
         // Changes for symbolic link
         if (argsFlag <= 0) {
@@ -221,13 +248,17 @@ void displayForFFlag(struct dirent *dirent, char *target, int tabSpaces, int cou
         }
         fileSize = 0;
         if (subStr != NULL) {
-            displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-        }else if (fileType != NULL) {
-            displayFortFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+            funcTargCall = &displayForsFlag;
+        } else if (fileType != NULL) {
+            funcTargCall = &displayFortFlag;
         } else if (fileSize != 0) {
-            displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+            funcTargCall = &displayForFFlag;
         } else if (SFlag == 1) {
-            displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+            funcTargCall = &displayForSFlag;
+        }
+        if (funcTargCall != NULL) {
+            (*funcTargCall)(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag,
+                            fileType);
         }
     }
 }
@@ -235,6 +266,7 @@ void displayForFFlag(struct dirent *dirent, char *target, int tabSpaces, int cou
 void displayForsFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
                      int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
     argsFlag--;
+    funcTarget funcTargCall = NULL;
     if (dirent->d_type == DT_DIR) {
         return;
 
@@ -258,13 +290,17 @@ void displayForsFlag(struct dirent *dirent, char *target, int tabSpaces, int cou
             }
             subStr = NULL;
             if (subStr != NULL) {
-                displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-            }else if (fileType != NULL) {
-                displayFortFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+                funcTargCall = &displayForsFlag;
+            } else if (fileType != NULL) {
+                funcTargCall = &displayFortFlag;
             } else if (fileSize != 0) {
-                displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+                funcTargCall = &displayForFFlag;
             } else if (SFlag == 1) {
-                displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+                funcTargCall = &displayForSFlag;
+            }
+            if (funcTargCall != NULL) {
+                (*funcTargCall)(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag,
+                                fileType);
             }
         }
         free(str1);
@@ -304,22 +340,24 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
         struct stat buf;
         int firstOrNotFlag = 0;
         int paramsPassedFlag = 0;
+        funcTarget funcTargCall = NULL;
         if (lstat(cwd, &buf) < 0) {
             printf("lstat error for: %s\n", dirent->d_name);
         }
 
         if (subStr != NULL) {
-            displayForsFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-        }else if (fileType != NULL) {
-            displayFortFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+            funcTargCall = &displayForsFlag;
+        } else if (fileType != NULL) {
+            funcTargCall = &displayFortFlag;
         } else if (fileSize != 0) {
-            displayForFFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+            funcTargCall = &displayForFFlag;
         } else if (SFlag == 1) {
-            displayForSFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+            funcTargCall = &displayForSFlag;
+        } else {
+            funcTargCall = &displayForNoFlag;
         }
-        else {
-            displayForNoFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-        }
+        (*funcTargCall) (dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag,
+                            fileType);
 
         count++;
         // Check to see if the file type is a directory. If it is, recursively call traverseDirectory on it.
@@ -365,7 +403,6 @@ int main(int argc, char **argv) {
             case 'f':
                 argFlag++;
                 fileSize += atoi(optarg);
-//                    fFlag = 1;
                 break;
             case 't':
                 argFlag++;
