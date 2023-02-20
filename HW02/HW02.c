@@ -56,8 +56,8 @@ void displayStatFlag(struct dirent *dirent, char *target, int tabSpaces, int cou
 void displayFileTypeFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
                          int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType);
 
-void printFile(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, int SFlag,
-          int argsFlag);
+void printFile(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, int SFlag, int argsFlag,
+               ssize_t b);
 
 
 typedef void (*funcTarget)(struct dirent *, char *, int, int, struct stat *, ssize_t,
@@ -205,9 +205,9 @@ void displayForNoFlag(struct dirent *dirent, char *target, int tabSpaces, int co
     if (argsFlag <= 0) {
         if (dirent->d_type == DT_LNK) {
             b = readlink(dirent->d_name, target, PATH_MAX - 1);
-            printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
+            printf("%*s [%s] (symbolic link to %s)\n", 4 * tabSpaces, " ", dirent->d_name, target);
         } else {
-            printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
+            printf("%*s [%s] (%s)\n", 4 * tabSpaces, " ", dirent->d_name, filetype(dirent->d_type));
 
         }
     }
@@ -236,7 +236,7 @@ void displayStatFlag(struct dirent *dirent, char *target, int tabSpaces, int cou
                      int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
     argsFlag--;
     funcTarget funcTargCall = NULL;
-    printFile(dirent, target, tabSpaces, count, buf, SFlag, argsFlag);
+    printFile(dirent, target, tabSpaces, count, buf, SFlag, argsFlag, 0);
     SFlag = 0;
     chooseNextFunc(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType,
                    funcTargCall);
@@ -261,15 +261,14 @@ void displayStatFlag(struct dirent *dirent, char *target, int tabSpaces, int cou
  * @param argsFlag
  * @param fileType
  */
-void printFile(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, int SFlag,
-          int argsFlag) {
-    ssize_t b;
+void printFile(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, int SFlag, int argsFlag,
+               ssize_t b) {
     if (argsFlag <= 0) {
         if (dirent->d_type == DT_LNK) {
             b = readlink(dirent->d_name, target, PATH_MAX - 1);
-            printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
+            printf("%*s [%s] (symbolic link to %s)\n", 4 * tabSpaces, " ",  dirent->d_name, target);
         } else {
-            printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
+            printf("%*s [%s] (%s)\n", 4 * tabSpaces, " ",  dirent->d_name, filetype(dirent->d_type));
 
         }
         if (SFlag != 0) {
@@ -344,7 +343,7 @@ void displayFileTypeFlag(struct dirent *dirent, char *target, int tabSpaces, int
         x = DT_REG;
     }
     if (dirent->d_type == x) {
-        printFile(dirent, target, tabSpaces, count, buf, SFlag, argsFlag);
+        printFile(dirent, target, tabSpaces, count, buf, SFlag, argsFlag, 0);
         fileType = NULL;
         chooseNextFunc(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType,
                        funcTargCall);
@@ -378,7 +377,7 @@ void displayForSizeFlag(struct dirent *dirent, char *target, int tabSpaces, int 
     funcTarget funcTargCall = NULL;
     if (checkSize(*buf, fileSize) == 1) {
         // Changes for symbolic link
-        printFile(dirent, target, tabSpaces, count, buf, SFlag, argsFlag);
+        printFile(dirent, target, tabSpaces, count, buf, SFlag, argsFlag, 0);
         fileSize = 0;
         chooseNextFunc(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType,
                        funcTargCall);
@@ -418,7 +417,7 @@ void displayForStringFlag(struct dirent *dirent, char *target, int tabSpaces, in
         char *str2;
         splitStringOnSpace(subStr, &str1, &str2);
         if (DT_DIR && checkSubstr(dirent->d_name, str1, depth, atoi(str2)) == 1) {
-            printFile(dirent, target, tabSpaces, count, buf, SFlag, argsFlag);
+            printFile(dirent, target, tabSpaces, count, buf, SFlag, argsFlag, 0);
             subStr = NULL;
             chooseNextFunc(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType,
                            funcTargCall);
@@ -427,14 +426,25 @@ void displayForStringFlag(struct dirent *dirent, char *target, int tabSpaces, in
         free(str2);
     }
 }
-
+/**
+ * This method loops through all the files in the starting directory given and calls the appropriate functions
+ * based on input flags. A lot of this code was taken from the example given in lab.
+ * @param path
+ * @param tabSpaces
+ * @param depth
+ * @param argsFlag
+ * @param subStr
+ * @param fileSize
+ * @param SFlag
+ * @param fileType
+ */
 void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char *subStr, int fileSize, int SFlag,
                        char *fileType) {
 
     struct dirent *dirent;
     DIR *parentDir;
 
-    // First, we need to open the directory.
+    // Open the directory.
     parentDir = opendir(path);
     if (parentDir == NULL) {
         printf("Error opening directory '%s'\n", path);
@@ -442,7 +452,6 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
     }
     int count = 1;
     // After we open the directory, we can read the contents of the directory, file by file.
-    char pathString[MAX_PATH_SIZE + 1];
     char *cwd = (char *) malloc(MAX_PATH_SIZE);
     while ((dirent = readdir(parentDir)) != NULL) {
 
@@ -451,20 +460,20 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
             continue;
         }
 
+        // set up relative path
         char target[PATH_MAX];
-        ssize_t b;
+        ssize_t b = -1;
         memset(cwd, 0, MAX_PATH_SIZE);
         strcat(cwd, path);
         strcat(cwd, "/");
         strcat(cwd, dirent->d_name);
+        // create a stat struct to use if we need stat info
         struct stat buf;
-        int firstOrNotFlag = 0;
-        int paramsPassedFlag = 0;
         funcTarget funcTargCall = NULL;
         if (lstat(cwd, &buf) < 0) {
             printf("lstat error for: %s\n", dirent->d_name);
         }
-
+        // call the appropriate function depending on the flags
         if (subStr != NULL) {
             funcTargCall = &displayForStringFlag;
         } else if (fileType != NULL) {
@@ -494,10 +503,10 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
 int main(int argc, char **argv) {
 
 
+    // Set up flags and parameters
     char *root;
     int tabSpaces = 0;
     int depth = 0;
-
     int opt;
     int argFlag = 0;
     char *subStr = NULL;
@@ -506,6 +515,7 @@ int main(int argc, char **argv) {
     int SFlag = 0;
     char *fileType;
 
+    // check if the starting folder is provided or not
     if (argv[1] == NULL || argv[1][0] == '-') {
         startingFolder = ".";
         root = get_current_directory_name();
@@ -515,6 +525,7 @@ int main(int argc, char **argv) {
     }
     printf("STARTING DIR\n[%s]\n",root);
     tabSpaces++;
+    // Take in cmd args and set flags accordingly
     while ((opt = getopt(argc, argv, "Ss:f:t:")) != -1) {
         switch (opt) {
             case 'S':
