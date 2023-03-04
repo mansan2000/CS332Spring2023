@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <limits.h>
 #include <time.h>
+#include <libgen.h>
 
 #define MAX_PATH_SIZE 2000
 
@@ -43,18 +44,60 @@ char *filetype(unsigned char type) {
     return str;
 }
 
-void displayForsFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
+void displayForStringFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
+                          int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType);
+
+void displayForSizeFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
+                        int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType);
+
+void displayStatFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
                      int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType);
 
-void displayForFFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
-                     int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType);
+void displayFileTypeFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
+                         int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType);
 
-void displayForSFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
-                     int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType);
-void displayFortFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
-                     int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType);
+void printFile(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, int SFlag, int argsFlag,
+               ssize_t b);
 
+
+typedef void (*funcTarget)(struct dirent *, char *, int, int, struct stat *, ssize_t,
+                           int, char *, int, int, int, char *);
+
+void chooseNextFunc(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b, int SFlag,
+               char *subStr, int fileSize, int depth, int argsFlag, char *fileType, funcTarget funcTargCall);
+
+/**
+ * Returns cwd but just the current folder
+ * @return current folder
+ */
+char* get_current_directory_name() {
+    char* cwd;
+
+    size_t size = MAX_PATH_SIZE;
+    cwd = malloc(sizeof(char) * size);
+
+    if (getcwd(cwd, size) != NULL) {
+        const char* directory_name = basename(cwd);
+
+        char* result = malloc(sizeof(char) * (strlen(directory_name) + 1));
+        strcpy(result, directory_name);
+
+        free(cwd);
+
+        return result;
+    } else {
+        free(cwd);
+        return NULL;
+    }
+}
+/**
+ * Takes in stat for a file and a tab indentation for formatting and prints out
+ * the file size, permissions, and last access time.
+ * @param sb
+ * @param tab
+ */
 void printStat(struct stat sb, int tab) {
+    // The conversion formatting for the permissions was borrowed from a stack overflow thread: https://stackoverflow.com/questions/10323060/printing-file-permissions-like-ls-l-using-stat2-in-c
     printf("%*s  File Permissions:         ", tab, " ");
     printf((S_ISDIR(sb.st_mode)) ? "d" : "-");
     printf((sb.st_mode & S_IRUSR) ? "r" : "-");
@@ -67,6 +110,7 @@ void printStat(struct stat sb, int tab) {
     printf((sb.st_mode & S_IWOTH) ? "w" : "-");
     printf((sb.st_mode & S_IXOTH) ? "x" : "-");
     printf("\n");
+    // This formatting was taken from the man page
     if (S_ISDIR(sb.st_mode)) {
         printf("%*s  File size:                %lld bytes\n", tab, " ",
                (long long) 0);
@@ -79,6 +123,14 @@ void printStat(struct stat sb, int tab) {
     printf("%*s  Last file access:         %s\n", tab, " ", ctime(&sb.st_atime));
 }
 
+/**
+ * Method that takes in stat for a file and a size parameter and returns 1 if the file size is less or equal
+ * to the parameter and 0 if it is not.
+ * and 0 if it
+ * @param sb
+ * @param size
+ * @return 0 or 1
+ */
 int checkSize(struct stat sb, int size) {
     int flag = 0;
     if (sb.st_size <= size) {
@@ -88,6 +140,15 @@ int checkSize(struct stat sb, int size) {
 
 }
 
+/**
+ * Takes in the fileName of the current file and its' depth and also the substring and depth from the cmd args.
+ * Then compares them and returns 1 if the substring is in the filename and the depth is less than the depth limit.
+ * @param fileName
+ * @param substr
+ * @param depth
+ * @param depthLimit
+ * @return 0 or 1
+ */
 int checkSubstr(char *fileName, char *substr, int depth, int depthLimit) {
     int flag = 0;
     if (strstr(fileName, substr) != NULL && depth <= depthLimit) {
@@ -97,6 +158,13 @@ int checkSubstr(char *fileName, char *substr, int depth, int depthLimit) {
 
 }
 
+/**
+ * Method to take in three strings and split the first one into two parts at the space character.
+ * It then assigns the seperated strings to the two other string params.
+ * @param str
+ * @param str1
+ * @param str2
+ */
 void splitStringOnSpace(const char *str, char **str1, char **str2) {
     char *space_pos = strchr(str, ' ');
     if (space_pos == NULL) {
@@ -114,171 +182,269 @@ void splitStringOnSpace(const char *str, char **str1, char **str2) {
     (*str2)[len2] = '\0';
 }
 
+/**
+ * Takes in information for a file and the flags from the cmd args.
+ * it then call the printFile function to print the file
+ * @param dirent
+ * @param target
+ * @param tabSpaces
+ * @param count
+ * @param buf
+ * @param b
+ * @param SFlag
+ * @param subStr
+ * @param fileSize
+ * @param depth
+ * @param argsFlag
+ * @param fileType
+ */
 void displayForNoFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
-                     int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
+                      int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
 
     argsFlag--;
     if (argsFlag <= 0) {
         if (dirent->d_type == DT_LNK) {
             b = readlink(dirent->d_name, target, PATH_MAX - 1);
-            printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
+            printf("%*s [%s] (symbolic link to %s)\n", 4 * tabSpaces, " ", dirent->d_name, target);
         } else {
-            printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
+            printf("%*s [%s] (%s)\n", 4 * tabSpaces, " ", dirent->d_name, filetype(dirent->d_type));
 
         }
-//        printStat(*buf, 4 * tabSpaces);
     }
-    if (subStr != NULL) {
-        displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-    }else if (fileType != NULL) {
-        displayFortFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-    } else if (fileSize != 0) {
-        displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-    } else if (SFlag == 1) {
-        displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-    }
-
 
 }
-void displayForSFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
+/**
+ * Takes in information for a file and the flags from the cmd args.
+ * it then call the printFile function to print the file if requirements are met.
+ * It then sets the SFlag to zero marking that the -S flag has been handled and
+ * then calls the chooseNextFunc function to determine which function the file should be
+ * sent to next depending on what flags are left to handle.
+ * @param dirent
+ * @param target
+ * @param tabSpaces
+ * @param count
+ * @param buf
+ * @param b
+ * @param SFlag
+ * @param subStr
+ * @param fileSize
+ * @param depth
+ * @param argsFlag
+ * @param fileType
+ */
+void displayStatFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
                      int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
-
     argsFlag--;
+    funcTarget funcTargCall = NULL;
+    printFile(dirent, target, tabSpaces, count, buf, SFlag, argsFlag, 0);
     SFlag = 0;
-    if (argsFlag <= 0) {
-        if (dirent->d_type == DT_LNK) {
-            b = readlink(dirent->d_name, target, PATH_MAX - 1);
-            printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
-        } else {
-            printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name, filetype(dirent->d_type));
-
-        }
-        printStat(*buf, 4 * tabSpaces);
-    }
-    if (subStr != NULL) {
-        displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-    }else if (fileType != NULL) {
-        displayFortFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-    } else if (fileSize != 0) {
-        displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-    } else if (SFlag == 1) {
-        displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-    }
+    chooseNextFunc(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType,
+                   funcTargCall);
 
 
 }
 
-void displayFortFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
-                     int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
-    argsFlag--;
-    int x;
-    if (strcmp(fileType, "d") == 0){
+/**
+ * This method takes in information for a file and the flags from the cmd args.
+ * It then checks whether all flags have been handled and if they have it prints the files
+ * that met the criteria for all flags
+ * @param dirent
+ * @param target
+ * @param tabSpaces
+ * @param count
+ * @param buf
+ * @param b
+ * @param SFlag
+ * @param subStr
+ * @param fileSize
+ * @param depth
+ * @param argsFlag
+ * @param fileType
+ */
+void printFile(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, int SFlag, int argsFlag,
+               ssize_t b) {
+    if (argsFlag <= 0) {
+        if (dirent->d_type == DT_LNK) {
+            b = readlink(dirent->d_name, target, PATH_MAX - 1);
+            printf("%*s [%s] (symbolic link to %s)\n", 4 * tabSpaces, " ",  dirent->d_name, target);
+        } else {
+            printf("%*s [%s] (%s)\n", 4 * tabSpaces, " ",  dirent->d_name, filetype(dirent->d_type));
 
+        }
+        if (SFlag != 0) {
+            printStat(*buf, 4 * tabSpaces);
+        }
+    }
+}
+
+/**
+ * Takes in information for a file and the flags from the cmd args.
+ * It then decides which flags have not been handled and calls the appropriate function.
+ * @param dirent
+ * @param target
+ * @param tabSpaces
+ * @param count
+ * @param buf
+ * @param b
+ * @param SFlag
+ * @param subStr
+ * @param fileSize
+ * @param depth
+ * @param argsFlag
+ * @param fileType
+ * @param funcTargCall
+ */
+void chooseNextFunc(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b, int SFlag,
+                    char *subStr, int fileSize, int depth, int argsFlag, char *fileType, funcTarget funcTargCall) {
+    if (subStr != NULL) {
+        funcTargCall = &displayForStringFlag;
+    } else if (fileType != NULL) {
+        funcTargCall = &displayFileTypeFlag;
+    } else if (fileSize != 0) {
+        funcTargCall = &displayForSizeFlag;
+    } else if (SFlag == 1) {
+        funcTargCall = &displayStatFlag;
+    }
+    if (funcTargCall != NULL) {
+        (*funcTargCall)(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag,
+                        fileType);
+    }
+}
+/**
+ * Takes in information for a file and the flags from the cmd args.
+ * It then checks to see if the current file is a folder or a regular file and only
+ * executes the rest of the function on the files that type matches the fileType arg.
+ * it then call the printFile function to print the file if all requirements are met.
+ * It then sets the fileType param to NULL marking that the -t flag has been handled and
+ * then calls the chooseNextFunc function to determine which function the file should be
+ * sent to next depending on what flags are left to handle.
+ * @param dirent
+ * @param target
+ * @param tabSpaces
+ * @param count
+ * @param buf
+ * @param b
+ * @param SFlag
+ * @param subStr
+ * @param fileSize
+ * @param depth
+ * @param argsFlag
+ * @param fileType
+ */
+void displayFileTypeFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
+                         int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
+    argsFlag--;
+    funcTarget funcTargCall = NULL;
+    int x;
+    if (strcmp(fileType, "d") == 0) {
         x = DT_DIR;
     }
-    if (strcmp(fileType, "f") == 0){
-
+    if (strcmp(fileType, "f") == 0) {
         x = DT_REG;
     }
     if (dirent->d_type == x) {
-        // Changes for symbolic link
-        if (argsFlag <= 0) {
-            if (dirent->d_type == DT_LNK) {
-                b = readlink(dirent->d_name, target, PATH_MAX - 1);
-                printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
-            } else {
-                printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name,
-                       filetype(dirent->d_type));
-
-            }
-        }
+        printFile(dirent, target, tabSpaces, count, buf, SFlag, argsFlag, 0);
         fileType = NULL;
-        if (subStr != NULL) {
-            displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-        }else if (fileType != NULL) {
-            displayFortFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-        } else if (fileSize != 0) {
-            displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-        } else if (SFlag == 1) {
-            displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-        }
+        chooseNextFunc(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType,
+                       funcTargCall);
     }
 }
-void displayForFFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
-                     int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
+
+/**
+ * Takes in information for a file and the flags from the cmd args.
+ * Then uses the checkSize function to see if the current file is smaller than the
+ * size param specified and only executes the rest of the function on those files.
+ * it then call the printFile function to print the file if all requirements are met.
+ * It then sets the fileType param to NULL marking that the -t flag has been handled and
+ * then calls the chooseNextFunc function to determine which function the file should be
+ * sent to next depending on what flags are left to handle.
+ * @param dirent
+ * @param target
+ * @param tabSpaces
+ * @param count
+ * @param buf
+ * @param b
+ * @param SFlag
+ * @param subStr
+ * @param fileSize
+ * @param depth
+ * @param argsFlag
+ * @param fileType
+ */
+void displayForSizeFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
+                        int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
     argsFlag--;
+    funcTarget funcTargCall = NULL;
     if (checkSize(*buf, fileSize) == 1) {
         // Changes for symbolic link
-        if (argsFlag <= 0) {
-            if (dirent->d_type == DT_LNK) {
-                b = readlink(dirent->d_name, target, PATH_MAX - 1);
-                printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name, target);
-            } else {
-                printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name,
-                       filetype(dirent->d_type));
-
-            }
-        }
+        printFile(dirent, target, tabSpaces, count, buf, SFlag, argsFlag, 0);
         fileSize = 0;
-        if (subStr != NULL) {
-            displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-        }else if (fileType != NULL) {
-            displayFortFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-        } else if (fileSize != 0) {
-            displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-        } else if (SFlag == 1) {
-            displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-        }
+        chooseNextFunc(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType,
+                       funcTargCall);
     }
 }
 
-void displayForsFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
-                     int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
+/**
+ * Takes in information for a file and the flags from the cmd args.
+ * Then splits the subStr into the string to find and the depth.
+ * Then uses the checkSubstr function to see if the file name contains the substr
+ * and is within the specified depth and only executes the rest of the function on those files.
+ * it then call the printFile function to print the file if all requirements are met.
+ * It then sets the subStr param to NULL marking that the -s flag has been handled and
+ * then calls the chooseNextFunc function to determine which function the file should be
+ * sent to next depending on what flags are left to handle.
+ * @param dirent
+ * @param target
+ * @param tabSpaces
+ * @param count
+ * @param buf
+ * @param b
+ * @param SFlag
+ * @param subStr
+ * @param fileSize
+ * @param depth
+ * @param argsFlag
+ * @param fileType
+ */
+void displayForStringFlag(struct dirent *dirent, char *target, int tabSpaces, int count, struct stat *buf, ssize_t b,
+                          int SFlag, char *subStr, int fileSize, int depth, int argsFlag, char *fileType) {
     argsFlag--;
+    funcTarget funcTargCall = NULL;
     if (dirent->d_type == DT_DIR) {
         return;
-
     } else {
-
         char *str1;
         char *str2;
         splitStringOnSpace(subStr, &str1, &str2);
         if (DT_DIR && checkSubstr(dirent->d_name, str1, depth, atoi(str2)) == 1) {
-//                         Changes for symbolic link
-            if (argsFlag <= 0) {
-                if (dirent->d_type == DT_LNK) {
-                    b = readlink(dirent->d_name, target, PATH_MAX - 1);
-                    printf("%*s[%d] %s (symbolic link to %s)\n", 4 * tabSpaces, " ", count, dirent->d_name,
-                           target);
-                } else {
-                    printf("%*s[%d] %s (%s)\n", 4 * tabSpaces, " ", count, dirent->d_name,
-                           filetype(dirent->d_type));
-
-                }
-            }
+            printFile(dirent, target, tabSpaces, count, buf, SFlag, argsFlag, 0);
             subStr = NULL;
-            if (subStr != NULL) {
-                displayForsFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-            }else if (fileType != NULL) {
-                displayFortFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-            } else if (fileSize != 0) {
-                displayForFFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-            } else if (SFlag == 1) {
-                displayForSFlag(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-            }
+            chooseNextFunc(dirent, target, tabSpaces, count, buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType,
+                           funcTargCall);
         }
         free(str1);
         free(str2);
     }
 }
-
+/**
+ * This method loops through all the files in the starting directory given and calls the appropriate functions
+ * based on input flags. A lot of this code was taken from the example given in lab.
+ * @param path
+ * @param tabSpaces
+ * @param depth
+ * @param argsFlag
+ * @param subStr
+ * @param fileSize
+ * @param SFlag
+ * @param fileType
+ */
 void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char *subStr, int fileSize, int SFlag,
                        char *fileType) {
 
     struct dirent *dirent;
     DIR *parentDir;
 
-    // First, we need to open the directory.
+    // Open the directory.
     parentDir = opendir(path);
     if (parentDir == NULL) {
         printf("Error opening directory '%s'\n", path);
@@ -286,7 +452,6 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
     }
     int count = 1;
     // After we open the directory, we can read the contents of the directory, file by file.
-    char pathString[MAX_PATH_SIZE + 1];
     char *cwd = (char *) malloc(MAX_PATH_SIZE);
     while ((dirent = readdir(parentDir)) != NULL) {
 
@@ -295,31 +460,33 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
             continue;
         }
 
+        // set up relative path
         char target[PATH_MAX];
-        ssize_t b;
+        ssize_t b = -1;
         memset(cwd, 0, MAX_PATH_SIZE);
         strcat(cwd, path);
         strcat(cwd, "/");
         strcat(cwd, dirent->d_name);
+        // create a stat struct to use if we need stat info
         struct stat buf;
-        int firstOrNotFlag = 0;
-        int paramsPassedFlag = 0;
+        funcTarget funcTargCall = NULL;
         if (lstat(cwd, &buf) < 0) {
             printf("lstat error for: %s\n", dirent->d_name);
         }
-
+        // call the appropriate function depending on the flags
         if (subStr != NULL) {
-            displayForsFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-        }else if (fileType != NULL) {
-            displayFortFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+            funcTargCall = &displayForStringFlag;
+        } else if (fileType != NULL) {
+            funcTargCall = &displayFileTypeFlag;
         } else if (fileSize != 0) {
-            displayForFFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+            funcTargCall = &displayForSizeFlag;
         } else if (SFlag == 1) {
-            displayForSFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
+            funcTargCall = &displayStatFlag;
+        } else {
+            funcTargCall = &displayForNoFlag;
         }
-        else {
-            displayForNoFlag(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag, fileType);
-        }
+        (*funcTargCall)(dirent, target, tabSpaces, count, &buf, b, SFlag, subStr, fileSize, depth, argsFlag,
+                        fileType);
 
         count++;
         // Check to see if the file type is a directory. If it is, recursively call traverseDirectory on it.
@@ -333,12 +500,13 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
         }
     }
 }
-
 int main(int argc, char **argv) {
 
+
+    // Set up flags and parameters
+    char *root;
     int tabSpaces = 0;
     int depth = 0;
-
     int opt;
     int argFlag = 0;
     char *subStr = NULL;
@@ -347,25 +515,30 @@ int main(int argc, char **argv) {
     int SFlag = 0;
     char *fileType;
 
+    // check if the starting folder is provided or not
     if (argv[1] == NULL || argv[1][0] == '-') {
         startingFolder = ".";
+        root = get_current_directory_name();
     } else {
         startingFolder = argv[1];
+        root = argv[1];
     }
+    printf("STARTING DIR\n[%s]\n",root);
+    tabSpaces++;
+    // Take in cmd args and set flags accordingly
     while ((opt = getopt(argc, argv, "Ss:f:t:")) != -1) {
         switch (opt) {
             case 'S':
                 argFlag++;
                 SFlag = 1;
                 break;
-            case 's':
+            case 'f':
                 subStr = optarg;
                 argFlag++;
                 break;
-            case 'f':
+            case 's':
                 argFlag++;
                 fileSize += atoi(optarg);
-//                    fFlag = 1;
                 break;
             case 't':
                 argFlag++;
