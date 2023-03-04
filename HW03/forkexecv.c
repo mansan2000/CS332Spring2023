@@ -11,11 +11,11 @@
 int main(int argc, char **argv) {
     pid_t pid;
     int status;
-    char *args[] = {".", "ls", (char *)NULL};
+    char *args[] = {"ls", "-a", (char *)NULL};
 
     pid = fork();
     if (pid == 0) { /* this is child process */
-        execv(".", args);
+        execv("/usr/bin/ls", args);
         printf("If you see this statement then execl failed ;-(\n");
         perror("execv");
         exit(-1);
