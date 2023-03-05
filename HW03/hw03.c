@@ -278,34 +278,19 @@ void displayStatFlag(struct params p) {
  * @param fileType
  */
 void printFile(struct params p, ssize_t b) {
-    printf("printFile: %s",p.unixCommand);
-    if (p.unixCommand != NULL) {
-        if (p.argsFlag <= 0) {
-            if (p.dirent->d_type == DT_LNK) {
-                forkFunc(p.file, p.unixCommand);
-                p.b = readlink(p.dirent->d_name, p.target, PATH_MAX - 1);
-                printf("%*s [%s] (symbolic link to %s)\n", 4 * p.tabSpaces, " ", p.dirent->d_name, p.target);
-            } else {
-                forkFunc(p.file, p.unixCommand);
-                printf("%*s [%s] (%s)\n", 4 * p.tabSpaces, " ", p.dirent->d_name, filetype(p.dirent->d_type));
+    if (p.argsFlag <= 0) {
+        if (p.dirent->d_type == DT_LNK) {
+            p.b = readlink(p.dirent->d_name, p.target, PATH_MAX - 1);
+            printf("%*s [%s] (symbolic link to %s)\n", 4 * p.tabSpaces, " ", p.dirent->d_name, p.target);
+        } else {
+            printf("%*s [%s] (%s)\n", 4 * p.tabSpaces, " ", p.dirent->d_name, filetype(p.dirent->d_type));
 
-            }
-            if (p.SFlag != 0) {
-                printStat(*p.buf, 4 * p.tabSpaces);
-            }
         }
-    } else {
-        if (p.argsFlag <= 0) {
-            if (p.dirent->d_type == DT_LNK) {
-                p.b = readlink(p.dirent->d_name, p.target, PATH_MAX - 1);
-                printf("%*s [%s] (symbolic link to %s)\n", 4 * p.tabSpaces, " ", p.dirent->d_name, p.target);
-            } else {
-                printf("%*s [%s] (%s)\n", 4 * p.tabSpaces, " ", p.dirent->d_name, filetype(p.dirent->d_type));
-
-            }
-            if (p.SFlag != 0) {
-                printStat(*p.buf, 4 * p.tabSpaces);
-            }
+        if (p.SFlag != 0) {
+            printStat(*p.buf, 4 * p.tabSpaces);
+        }
+        if (p.unixCommand != NULL) {
+            forkFunc(p.file, p.unixCommand);
         }
     }
 }
@@ -453,58 +438,13 @@ void displayForStringFlag(struct params p) {
     }
 }
 
-int splitStringOnSpaceTwo(char *str, char ***command, int *numArgs) {
-    int i = 0;
-    char *token;
-
-    /* allocate initial memory for the command array */
-    *command = malloc(sizeof(char*));
-
-    /* get the first token */
-    token = strtok(str, " ");
-
-    /* walk through other tokens */
-    while (token != NULL) {
-        /* allocate memory for the new argument */
-        (*command)[i] = malloc(strlen(token) + 1);
-
-        /* copy the token into the new argument */
-        strcpy((*command)[i], token);
-
-        /* increment the counter */
-        i++;
-
-        /* reallocate memory for the command array */
-        *command = realloc(*command, (i+1) * sizeof(char*));
-
-        /* get the next token */
-        token = strtok(NULL, " ");
-    }
-
-    /* set the last element of the command array to NULL */
-    (*command)[i] = NULL;
-
-    /* update the number of arguments */
-    *numArgs = i;
-
-    return i;
-}
-
 
 void parseCommand(char *command, char ***array, int *numTokens) {
     char *token = strtok(command, " ");
     int i = 0;
     while (token != NULL) {
-        *array = realloc(*array, (i + 1) * sizeof(char*));
-        if (*array == NULL) {
-            fprintf(stderr, "Error: unable to allocate memory\n");
-            exit(1);
-        }
+        *array = realloc(*array, (i + 1) * sizeof(char *));
         (*array)[i] = malloc(strlen(token) + 1);
-        if ((*array)[i] == NULL) {
-            fprintf(stderr, "Error: unable to allocate memory\n");
-            exit(1);
-        }
         strcpy((*array)[i], token);
         i++;
         token = strtok(NULL, " ");
@@ -514,57 +454,29 @@ void parseCommand(char *command, char ***array, int *numTokens) {
 
 
 void forkFunc(char *target, char *command) {
-//    char *str1;
-//    char *str2;
-//    char command[] = "ls -a";
+    // pass *command to parseCommand and return argsArray with space seperated commands in the array
     int len = strlen(command);
     char *cmd = malloc((len + 1) * sizeof(char));
     strcpy(cmd, command);
-    printf("COMMAND: %s", command);
     char **argsArray = NULL;
     int numTokens;
-    parseCommand(cmd, &argsArray , &numTokens);
-    argsArray = realloc(argsArray, (numTokens + 2) * sizeof(char*));
-    if (argsArray == NULL) {
-        fprintf(stderr, "Error: unable to allocate memory\n");
-        exit(1);
-    }
+    parseCommand(cmd, &argsArray, &numTokens);
+
+    // now append the target file and the null character to the argsArray
+    argsArray = realloc(argsArray, (numTokens + 2) * sizeof(char *));
     argsArray[numTokens] = malloc(strlen(target) + 1);
-    if (argsArray[numTokens] == NULL) {
-        fprintf(stderr, "Error: unable to allocate memory\n");
-        exit(1);
-    }
     strcpy(argsArray[numTokens], target);
     argsArray[numTokens + 1] = NULL;
-//    int numArgs = splitStringOnSpaceTwo(command, &cmd, &numArgs);
-//    printf("Test: %s", command);
-//    cmd = realloc(cmd, (numArgs+2)*sizeof(char *));
-//    cmd[numArgs] = target;
-//    cmd[numArgs+1] = NULL;
-//    puts(cmd[0]);
-//    puts(cmd[1]);
-//    puts(cmd[2]);
-    char *bin = "/usr/bin/grep";
-    char *binCmd;
-//    binCmd = malloc(strlen(bin)+ strlen(command)+1);
-//    strcpy(binCmd, bin);
-//    strcat(binCmd, command);
-//    splitStringOnSpace(command, &str1, &str2);
+
     pid_t pid;
     int status;
-    puts(argsArray[0]);
-    char *args[] = {argsArray[0], argsArray, target, (char *) NULL};
 
-    puts("============Unix Command===========");
+    printf("===================================================\n");
+    printf("Unix Command Output for '%s %s'\n", command, target);
+    printf("===================================================\n");
+    printf("---------------------------------------------------\n");
     pid = fork();
-//    for (int i = 0; i < numTokens; ++i) {
-//        puts(cmd[i]);
-//        free(cmd[i]);
-//
-//    }
-//    free(cmd);
     if (pid == 0) { /* this is child process */
-        printf("argsArray[0] %s", argsArray[0]);
         execvp(argsArray[0], argsArray);
         printf("If you see this statement then execl failed ;-(\n");
         perror("execv");
@@ -583,8 +495,7 @@ void forkFunc(char *target, char *command) {
         perror("fork"); /* use perror to print the system error message */
         exit(EXIT_FAILURE);
     }
-    puts("===================================");
-//    memset(cmd,0,numArgs);
+    printf("---------------------------------------------------\n\n\n");
 
 //    printf("[%ld]: Exiting program .....\n", (long)getpid());
 }
@@ -678,7 +589,8 @@ void traverseDirectory(char *path, int tabSpaces, int depth, int argsFlag, char 
             strcpy(subDirPath, path);
             strcat(subDirPath, "/");
             strcat(subDirPath, dirent->d_name);
-            traverseDirectory(subDirPath, tabSpaces + 1, depth + 1, argsFlag, subStr, fileSize, SFlag, fileType, unixCommand);
+            traverseDirectory(subDirPath, tabSpaces + 1, depth + 1, argsFlag, subStr, fileSize, SFlag, fileType,
+                              unixCommand);
         }
     }
 }
