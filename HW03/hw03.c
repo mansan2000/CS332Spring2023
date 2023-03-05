@@ -289,7 +289,7 @@ void printFile(struct params p, ssize_t b) {
         if (p.SFlag != 0) {
             printStat(*p.buf, 4 * p.tabSpaces);
         }
-        if (p.unixCommand != NULL) {
+        if (p.unixCommand != NULL && p.dirent->d_type != DT_DIR) {
             forkFunc(p.file, p.unixCommand);
         }
     }
@@ -474,6 +474,7 @@ void forkFunc(char *target, char *command) {
     printf("===================================================\n");
     printf("Unix Command Output for '%s %s'\n", command, target);
     printf("===================================================\n");
+    printf("                          ↓                        \n");
     printf("---------------------------------------------------\n");
     pid = fork();
     if (pid == 0) { /* this is child process */
