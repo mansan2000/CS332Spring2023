@@ -278,6 +278,7 @@ void displayStatFlag(struct params p) {
  * @param fileType
  */
 void printFile(struct params p, ssize_t b) {
+    printf("printFile: %s",p.unixCommand);
     if (p.unixCommand != NULL) {
         if (p.argsFlag <= 0) {
             if (p.dirent->d_type == DT_LNK) {
@@ -488,28 +489,83 @@ int splitStringOnSpaceTwo(char *str, char ***command, int *numArgs) {
 
     return i;
 }
+
+
+void parseCommand(char *command, char ***array, int *numTokens) {
+    char *token = strtok(command, " ");
+    int i = 0;
+    while (token != NULL) {
+        *array = realloc(*array, (i + 1) * sizeof(char*));
+        if (*array == NULL) {
+            fprintf(stderr, "Error: unable to allocate memory\n");
+            exit(1);
+        }
+        (*array)[i] = malloc(strlen(token) + 1);
+        if ((*array)[i] == NULL) {
+            fprintf(stderr, "Error: unable to allocate memory\n");
+            exit(1);
+        }
+        strcpy((*array)[i], token);
+        i++;
+        token = strtok(NULL, " ");
+    }
+    *numTokens = i;
+}
+
+
 void forkFunc(char *target, char *command) {
 //    char *str1;
 //    char *str2;
-    char **argsArray;
-    int numArgs = splitStringOnSpaceTwo(command, &argsArray, &numArgs);
-    argsArray = realloc(argsArray, (numArgs+2)*sizeof(char *));
-    argsArray[numArgs] = target;
-    argsArray[numArgs+1] = NULL;
-    char *bin = "/usr/bin/";
+//    char command[] = "ls -a";
+    int len = strlen(command);
+    char *cmd = malloc((len + 1) * sizeof(char));
+    strcpy(cmd, command);
+    printf("COMMAND: %s", command);
+    char **argsArray = NULL;
+    int numTokens;
+    parseCommand(cmd, &argsArray , &numTokens);
+    argsArray = realloc(argsArray, (numTokens + 2) * sizeof(char*));
+    if (argsArray == NULL) {
+        fprintf(stderr, "Error: unable to allocate memory\n");
+        exit(1);
+    }
+    argsArray[numTokens] = malloc(strlen(target) + 1);
+    if (argsArray[numTokens] == NULL) {
+        fprintf(stderr, "Error: unable to allocate memory\n");
+        exit(1);
+    }
+    strcpy(argsArray[numTokens], target);
+    argsArray[numTokens + 1] = NULL;
+//    int numArgs = splitStringOnSpaceTwo(command, &cmd, &numArgs);
+//    printf("Test: %s", command);
+//    cmd = realloc(cmd, (numArgs+2)*sizeof(char *));
+//    cmd[numArgs] = target;
+//    cmd[numArgs+1] = NULL;
+//    puts(cmd[0]);
+//    puts(cmd[1]);
+//    puts(cmd[2]);
+    char *bin = "/usr/bin/grep";
     char *binCmd;
-    binCmd = malloc(strlen(bin)+ strlen(command)+1);
-    strcpy(binCmd, bin);
-    strcat(binCmd, command);
+//    binCmd = malloc(strlen(bin)+ strlen(command)+1);
+//    strcpy(binCmd, bin);
+//    strcat(binCmd, command);
 //    splitStringOnSpace(command, &str1, &str2);
     pid_t pid;
     int status;
-    char *args[] = {bin, target, (char *) NULL};
+    puts(argsArray[0]);
+    char *args[] = {argsArray[0], argsArray, target, (char *) NULL};
 
     puts("============Unix Command===========");
     pid = fork();
+//    for (int i = 0; i < numTokens; ++i) {
+//        puts(cmd[i]);
+//        free(cmd[i]);
+//
+//    }
+//    free(cmd);
     if (pid == 0) { /* this is child process */
-        execv(binCmd, argsArray);
+        printf("argsArray[0] %s", argsArray[0]);
+        execvp(argsArray[0], argsArray);
         printf("If you see this statement then execl failed ;-(\n");
         perror("execv");
         exit(-1);
@@ -528,6 +584,7 @@ void forkFunc(char *target, char *command) {
         exit(EXIT_FAILURE);
     }
     puts("===================================");
+//    memset(cmd,0,numArgs);
 
 //    printf("[%ld]: Exiting program .....\n", (long)getpid());
 }
