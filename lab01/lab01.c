@@ -21,14 +21,14 @@ int isPrime(int givenNumber){
 
 int main(){
 	
-//    // Take user input and then call funtion using the input
-//    printf("========= UABNumber =========\a");
-//    int n2;
-//    printf("Enter an integer for givenNumber: ");
-//    scanf("%d", &n2);
-//	isPrime(n2);
+    // Take user input and then call funtion using the input
+    printf("========= UABNumber =========\a");
+    int n2;
+    printf("Enter an integer for givenNumber: ");
+    scanf("%d", &n2);
+	isPrime(n2);
 
-char d = '3';
-int x = 3;
-    printf("%d",x+d);
+//char d = '3';
+//int x = 3;
+//    printf("%d",x+d);
 }

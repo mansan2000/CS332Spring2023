@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
+#include <errno.h>
 
 #define MAX_PATH_SIZE 2000
 
@@ -28,7 +29,8 @@ void traverseDirectory(char *path, int tabSpaces) {
 
     // First, we need to open the directory.
     parentDir = opendir(path);
-    if (parentDir == NULL) { 
+    printf("Errno: %s\n", strerror(errno));
+    if (parentDir == NULL) {
         printf ("Error opening directory '%s'\n", path); 
         exit (-1);
     }

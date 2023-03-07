@@ -513,7 +513,7 @@ int main(int argc, char **argv) {
     int fileSize = 0;
     char *startingFolder = NULL;
     int SFlag = 0;
-    char *fileType;
+    char *fileType = NULL;
 
     // check if the starting folder is provided or not
     if (argv[1] == NULL || argv[1][0] == '-') {

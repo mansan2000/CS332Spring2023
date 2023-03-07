@@ -1,0 +1,5 @@
+uname -a
+/sbin/ifconfig
+ls -a
+stat a.out
+echo hello world
