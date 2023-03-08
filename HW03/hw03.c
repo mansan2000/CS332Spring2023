@@ -227,6 +227,9 @@ void displayForNoFlag(struct params p) {
             printf("%*s [%s] (%s)\n", 4 * p.tabSpaces, " ", p.dirent->d_name, filetype(p.dirent->d_type));
 
         }
+        if (p.unixCommand != NULL && p.dirent->d_type != DT_DIR) {
+            forkFunc(p.file, p.unixCommand);
+        }
     }
 
 }
@@ -439,6 +442,13 @@ void displayForStringFlag(struct params p) {
 }
 
 
+/***
+ * Function to take in a command and an array and a number of token in the array and split the command up by space
+ * and put it in the array so that execvp can parse it correctly
+ * @param command
+ * @param array
+ * @param numTokens
+ */
 void parseCommand(char *command, char ***array, int *numTokens) {
     char *token = strtok(command, " ");
     int i = 0;
@@ -453,6 +463,11 @@ void parseCommand(char *command, char ***array, int *numTokens) {
 }
 
 
+/***
+ * Function to take in a target file and a command and execute that command on the target file using fork and wait
+ * @param target
+ * @param command
+ */
 void forkFunc(char *target, char *command) {
     // pass *command to parseCommand and return argsArray with space seperated commands in the array
     int len = strlen(command);
