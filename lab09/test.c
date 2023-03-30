@@ -47,18 +47,15 @@ int main(int argc, char **argv) {
         while (child_pid != 0) {
             printf("Parent is still running.\n");
             sleep(1);
-            waitpid(child_pid, &status, WNOHANG); // check if child process has terminated
-            if (WIFEXITED(status)) { // child process terminated normally
-                printf("Child process exited with status = %d\n", WEXITSTATUS(status));
-//                child_pid = 0; // set child process ID to 0 to indicate it's not running
-            } else if (WIFSIGNALED(status)) { // child process terminated due to a signal
-                printf("Child process terminated due to signal %d\n", WTERMSIG(status));
-//                child_pid = 0; // set child process ID to 0 to indicate it's not running
-            }
+//            waitpid(child_pid, &status, WNOHANG); // check if child process has terminated
+//            if (WIFEXITED(status)) { // child process terminated normally
+////                child_pid = 0; // set child process ID to 0 to indicate it's not running
+//            } else if (WIFSIGNALED(status)) { // child process terminated due to a signal
+//                printf("Child process terminated due to signal %d\n", WTERMSIG(status));
+////                child_pid = 0; // set child process ID to 0 to indicate it's not running
+//            }
         }
     }
-
-    printf("[%ld]: Exiting program .....\n", (long)getpid());
 
     return 0;
 }
