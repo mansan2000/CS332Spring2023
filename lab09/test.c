@@ -9,35 +9,35 @@ pid_t child_pid;
 
 void sigint_handler(int sig) {
     if (child_pid != 0) {
-        kill(child_pid, SIGTERM); // kill child process
-//        child_pid = 0; // set child process ID to 0 to indicate it's not running
+        kill(child_pid, SIGINT);
+
     }
 }
 void sigtstp_handler(int sig) {
     if (child_pid != 0) {
-        kill(child_pid, SIGTSTP); // send SIGTSTP signal to child process
+        kill(child_pid, SIGTSTP);
     }
 }
 
 void sigquit_handler(int sig) {
     if (child_pid != 0) {
-        kill(child_pid, SIGQUIT); // send SIGQUIT signal to child process
+        kill(child_pid, SIGQUIT);
         int status;
-        waitpid(child_pid, &status, 0); // wait for child process to terminate
+        waitpid(child_pid, &status, 0);
     }
     exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv) {
-    signal(SIGINT, sigint_handler); // register signal handler for SIGINT
-    signal(SIGTSTP, sigtstp_handler); // register signal handler for SIGTSTP
+    signal(SIGINT, sigint_handler);
+    signal(SIGTSTP, sigtstp_handler);
     signal(SIGQUIT, sigquit_handler);
     if (argc < 2) {
         printf("Usage: %s <command> [args]\n", argv[0]);
         exit(-1);
     }
 
-    child_pid = fork(); // create child process
+    child_pid = fork();
 
     if (child_pid == 0) {
         // child process code
