@@ -9,7 +9,7 @@ pid_t child_pid;
 
 void sigint_handler(int sig) {
     if (child_pid != 0) {
-        kill(child_pid, SIGINT);
+        kill(child_pid, SIGTERM);
 
     }
 }
@@ -20,14 +20,9 @@ void sigtstp_handler(int sig) {
 }
 
 void sigquit_handler(int sig) {
-    if (child_pid != 0) {
-        kill(child_pid, SIGQUIT);
-        int status;
-        waitpid(child_pid, &status, 0);
-    }
+    kill(child_pid, SIGQUIT);
     exit(EXIT_SUCCESS);
 }
-
 int main(int argc, char **argv) {
     signal(SIGINT, sigint_handler);
     signal(SIGTSTP, sigtstp_handler);
@@ -37,7 +32,7 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
-    child_pid = fork();
+    child_pid = fork(); // create child process
 
     if (child_pid == 0) {
         // child process code
