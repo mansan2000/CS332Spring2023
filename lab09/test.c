@@ -1,3 +1,8 @@
+//I, __Emanuel Sanders_____, declare that I have completed this assignment completely and entirely on my own, without any unathorized consultation from others or unathorized access to online websites. I have read the UAB Academic Honor Code and understand that any breach of the UAB Academic Honor Code may result in severe penalties.
+//
+//Student Signature/Initials: ___JES_________
+//
+//        Date: __3/29/2023__________
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -8,12 +13,14 @@
 pid_t child_pid;
 
 void sigint_handler(int sig) {
+    printf("Interrupting Child process");
     if (child_pid != 0) {
         kill(child_pid, SIGTERM);
 
     }
 }
 void sigtstp_handler(int sig) {
+    printf("Suspending Child process");
     if (child_pid != 0) {
         kill(child_pid, SIGTSTP);
     }
@@ -47,13 +54,7 @@ int main(int argc, char **argv) {
         while (child_pid != 0) {
             printf("Parent is still running.\n");
             sleep(1);
-//            waitpid(child_pid, &status, WNOHANG); // check if child process has terminated
-//            if (WIFEXITED(status)) { // child process terminated normally
-////                child_pid = 0; // set child process ID to 0 to indicate it's not running
-//            } else if (WIFSIGNALED(status)) { // child process terminated due to a signal
-//                printf("Child process terminated due to signal %d\n", WTERMSIG(status));
-////                child_pid = 0; // set child process ID to 0 to indicate it's not running
-//            }
+            waitpid(child_pid, &status, WNOHANG); // check if child process has terminated
         }
     }
 
