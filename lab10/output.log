@@ -1,0 +1,10 @@
+uname -a    Wed Apr  5 14:34:31 2023    Wed Apr  5 14:34:31 2023
+uname -a    Wed Apr  5 14:34:31 2023    Wed Apr  5 14:34:31 2023
+/sbin/ifconfig    Wed Apr  5 14:34:31 2023    Wed Apr  5 14:34:31 2023
+ls -a    Wed Apr  5 14:34:31 2023    Wed Apr  5 14:34:31 2023
+stat a.out    Wed Apr  5 14:34:31 2023    Wed Apr  5 14:34:31 2023
+echo hello world    Wed Apr  5 14:34:31 2023    Wed Apr  5 14:34:31 2023
+stat lab10.cls -a    Wed Apr  5 14:34:31 2023    Wed Apr  5 14:34:31 2023
+stat a.out    Wed Apr  5 14:34:31 2023    Wed Apr  5 14:34:31 2023
+echo hello world    Wed Apr  5 14:34:31 2023    Wed Apr  5 14:34:31 2023
+stat lab10.c    Wed Apr  5 14:34:31 2023    Wed Apr  5 14:34:31 2023

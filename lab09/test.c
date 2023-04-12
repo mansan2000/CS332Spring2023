@@ -13,16 +13,16 @@
 pid_t child_pid;
 
 void sigint_handler(int sig) {
-    printf("Interrupting Child process");
+    printf("Interrupting Child process\n");
     if (child_pid != 0) {
         kill(child_pid, SIGTERM);
 
     }
 }
 void sigtstp_handler(int sig) {
-    printf("Suspending Child process");
+    printf("Suspending Child process\n");
     if (child_pid != 0) {
-        kill(child_pid, SIGTSTP);
+        kill(child_pid, SIGSTOP);
     }
 }
 
@@ -32,7 +32,7 @@ void sigquit_handler(int sig) {
 }
 int main(int argc, char **argv) {
     signal(SIGINT, sigint_handler);
-    signal(SIGTSTP, sigtstp_handler);
+    signal(SIGSTOP, sigtstp_handler);
     signal(SIGQUIT, sigquit_handler);
     if (argc < 2) {
         printf("Usage: %s <command> [args]\n", argv[0]);

@@ -1,0 +1,6 @@
+uname -a
+/sbin/ifconfig
+ls -a
+stat a.out
+echo hello world
+stat lab10.c

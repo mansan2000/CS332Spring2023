@@ -1,3 +1,8 @@
+//I, __Emanuel Sanders_____, declare that I have completed this assignment completely and entirely on my own, without any unathorized consultation from others or unathorized access to online websites. I have read the UAB Academic Honor Code and understand that any breach of the UAB Academic Honor Code may result in severe penalties.
+//
+//Student Signature/Initials: ___JES_________
+//
+//        Date: __4/5/2023__________
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,18 +37,12 @@ void forkFunc(char *command) {
 
     // now append the target file and the null character to the argsArray
     argsArray = realloc(argsArray, (numTokens + 2) * sizeof(char *));
-//    argsArray[numTokens] = malloc(strlen(target) + 1);
-//    strcpy(argsArray[numTokens], target);
     argsArray[numTokens + 1] = NULL;
 
     pid_t pid;
     int status;
 
-    printf("===================================================\n");
-    printf("Unix Command Output for '%s'\n", command);
-    printf("===================================================\n");
-    printf("                          ↓                        \n");
-    printf("---------------------------------------------------\n");
+
     pid = fork();
     if (pid == 0) { /* this is child process */
         char outFile [40];
@@ -74,7 +73,6 @@ void forkFunc(char *command) {
         perror("fork"); /* use perror to print the system error message */
         exit(EXIT_FAILURE);
     }
-    printf("---------------------------------------------------\n\n\n");
 
 //    printf("[%ld]: Exiting program .....\n", (long)getpid());
 }
